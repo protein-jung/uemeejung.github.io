@@ -539,6 +539,27 @@
       .container { padding: 0 1.5rem; }
       .about-sec, .pub-sec, .int-sec, .aff-sec { padding: 5rem 0; }
     }
+
+    /* ─── ACCESSIBILITY ─── */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--blue2);
+      outline-offset: 3px;
+    }
+    @media (hover: none), (pointer: coarse) {
+      body, .hamburger { cursor: auto; }
+      #cur, #cur-ring { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      #cur, #cur-ring { display: none; }
+      body { cursor: auto; }
+      .hero-bg img { transition: none; }
+    }
   </style>
 </head>
 <body>

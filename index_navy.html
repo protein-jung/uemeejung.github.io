@@ -565,6 +565,29 @@
       .footer-inner { flex-direction: column; }
       .footer-links { flex-wrap: wrap; }
     }
+
+    /* ==============================
+       ACCESSIBILITY
+    ============================== */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent2);
+      outline-offset: 3px;
+    }
+    @media (hover: none), (pointer: coarse) {
+      body, .hamburger { cursor: auto; }
+      #cursor, #cursor-ring { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      #cursor, #cursor-ring { display: none; }
+      body { cursor: auto; }
+      .hero-photo-wrap img { transition: none; }
+    }
   </style>
 </head>
 <body>
