@@ -36,30 +36,11 @@
       font-weight: 300;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      cursor: none;
     }
     a { color: inherit; text-decoration: none; }
     p { line-height: 1.75; }
     ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-thumb { background: var(--bluegray); }
-
-    /* CURSOR */
-    #cursor {
-      position: fixed; width: 8px; height: 8px;
-      background: var(--accent2); border-radius: 50%;
-      pointer-events: none; z-index: 9999;
-      transform: translate(-50%,-50%);
-      transition: width .2s, height .2s, background .2s;
-    }
-    #cursor-ring {
-      position: fixed; width: 32px; height: 32px;
-      border: 1px solid rgba(137,196,225,0.5); border-radius: 50%;
-      pointer-events: none; z-index: 9998;
-      transform: translate(-50%,-50%);
-      transition: width .4s var(--ease), height .4s var(--ease);
-    }
-    body:has(a:hover) #cursor { width: 16px; height: 16px; background: var(--accent); }
-    body:has(a:hover) #cursor-ring { width: 48px; height: 48px; border-color: var(--accent); }
 
     /* NAV */
     #nav {
@@ -104,7 +85,7 @@
     .nav-links a.active { color: var(--white); }
     .hamburger {
       display: none; flex-direction: column; gap: 5px;
-      background: none; border: none; cursor: none; padding: 4px;
+      background: none; border: none; cursor: pointer; padding: 4px;
     }
     .hamburger span { display: block; width: 22px; height: 1px; background: var(--white); }
     .mobile-menu {
@@ -573,10 +554,6 @@
       outline: 2px solid var(--accent2);
       outline-offset: 3px;
     }
-    @media (hover: none), (pointer: coarse) {
-      body, .hamburger { cursor: auto; }
-      #cursor, #cursor-ring { display: none; }
-    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -584,16 +561,11 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
       }
-      #cursor, #cursor-ring { display: none; }
-      body { cursor: auto; }
       .hero-photo-wrap img { transition: none; }
     }
   </style>
 </head>
 <body>
-  <div id="cursor"></div>
-  <div id="cursor-ring"></div>
-
   <nav id="nav">
     <a href="index.html" class="nav-logo">UJ</a>
     <div class="nav-links">
@@ -794,12 +766,6 @@
   </footer>
 
   <script>
-    const cursor = document.getElementById("cursor");
-    const cursorRing = document.getElementById("cursor-ring");
-    let mx=0,my=0,rx=0,ry=0;
-    document.addEventListener("mousemove",e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+"px";cursor.style.top=my+"px";});
-    (function animRing(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;cursorRing.style.left=rx+"px";cursorRing.style.top=ry+"px";requestAnimationFrame(animRing);})();
-
     const nav=document.getElementById("nav");
     window.addEventListener("scroll",()=>nav.classList.toggle("scrolled",window.scrollY>40));
 

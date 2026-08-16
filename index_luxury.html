@@ -36,30 +36,10 @@
       font-weight: 300;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      cursor: none;
     }
     a { color: inherit; text-decoration: none; }
     ::-webkit-scrollbar { width: 2px; }
     ::-webkit-scrollbar-thumb { background: var(--navy4); }
-
-    /* ─── CURSOR ─── */
-    #cur {
-      position: fixed; width: 6px; height: 6px;
-      background: var(--blue2); border-radius: 50%;
-      pointer-events: none; z-index: 9999;
-      transform: translate(-50%,-50%);
-      transition: width .15s, height .15s;
-    }
-    #cur-ring {
-      position: fixed; width: 28px; height: 28px;
-      border: 1px solid rgba(107,174,214,.45);
-      border-radius: 50%;
-      pointer-events: none; z-index: 9998;
-      transform: translate(-50%,-50%);
-      transition: width .5s var(--ease), height .5s var(--ease), border-color .3s;
-    }
-    body:has(a:hover) #cur { width: 14px; height: 14px; }
-    body:has(a:hover) #cur-ring { width: 44px; height: 44px; border-color: var(--blue2); }
 
     /* ─── NAV ─── */
     #nav {
@@ -94,7 +74,7 @@
     .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
     .hamburger {
       display: none; flex-direction: column; gap: 5px;
-      background: none; border: none; cursor: none; padding: 4px;
+      background: none; border: none; cursor: pointer; padding: 4px;
     }
     .hamburger span { display: block; width: 20px; height: 1px; background: var(--white); }
     .mob-menu {
@@ -545,10 +525,6 @@
       outline: 2px solid var(--blue2);
       outline-offset: 3px;
     }
-    @media (hover: none), (pointer: coarse) {
-      body, .hamburger { cursor: auto; }
-      #cur, #cur-ring { display: none; }
-    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -556,16 +532,11 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
       }
-      #cur, #cur-ring { display: none; }
-      body { cursor: auto; }
       .hero-bg img { transition: none; }
     }
   </style>
 </head>
 <body>
-  <div id="cur"></div>
-  <div id="cur-ring"></div>
-
   <!-- NAV -->
   <nav id="nav">
     <a href="index.html" class="nav-logo">Uemee Jung</a>
@@ -806,12 +777,6 @@
   </footer>
 
   <script>
-    // Cursor
-    const cur=document.getElementById("cur"),ring=document.getElementById("cur-ring");
-    let mx=0,my=0,rx=0,ry=0;
-    document.addEventListener("mousemove",e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+"px";cur.style.top=my+"px";});
-    (function loop(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+"px";ring.style.top=ry+"px";requestAnimationFrame(loop);})();
-
     // Nav scroll
     const nav=document.getElementById("nav");
     window.addEventListener("scroll",()=>nav.classList.toggle("scrolled",window.scrollY>60));
