@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>견적문의 | 루나하우스케어</title>
+<meta name="description" content="루나하우스케어에 무료 견적을 문의하세요. 사진 한 장이면 충분합니다.">
+<link rel="icon" type="image/jpeg" href="assets/logo-icon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&family=Noto+Sans+KR:wght@400;500;700;900&family=Roboto+Slab:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark"><img src="assets/logo-icon.jpg" alt="루나하우스케어 로고"></span>
+      <span class="brand-name">
+        <strong>루나하우스케어</strong>
+        <span>Luna House Care</span>
+      </span>
+    </a>
+    <nav class="main-nav">
+      <a href="index.html">홈</a>
+      <a href="cases.html">시공사례</a>
+      <a href="estimate.html" aria-current="page">견적문의</a>
+    </nav>
+    <div class="header-actions">
+      <a class="phone-pill" href="tel:010-3750-0835">010-3750-0835</a>
+      <button class="nav-toggle" aria-label="메뉴 열기" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="wrap">
+    <span class="eyebrow">Estimate</span>
+    <h1>견적문의</h1>
+    <p>사진 한 장이면 충분합니다. 공간과 상황을 편하게 알려주시면 빠르게 확인 후 연락드립니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap estimate-layout">
+    <div class="form-card">
+      <form id="estimate-form" novalidate>
+        <div class="form-row">
+          <div class="field">
+            <label for="name">성함</label>
+            <input type="text" id="name" name="name" placeholder="홍길동" required>
+          </div>
+          <div class="field">
+            <label for="phone">연락처</label>
+            <input type="tel" id="phone" name="phone" placeholder="010-0000-0000" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="space-type">공간 유형</label>
+            <select id="space-type" name="space-type">
+              <option value="apartment">아파트</option>
+              <option value="officetel">오피스텔</option>
+              <option value="store">상가</option>
+              <option value="villa">빌라</option>
+              <option value="academy">학원 · 학교</option>
+              <option value="hospital">병원</option>
+              <option value="etc">기타</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>시공 위치</label>
+            <div class="radio-row">
+              <label><input type="radio" name="location" value="indoor" checked> 실내</label>
+              <label><input type="radio" name="location" value="outdoor"> 실외</label>
+              <label><input type="radio" name="location" value="both"> 실내+실외</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>시공 항목 <span class="hint">(중복 선택 가능)</span></label>
+          <div class="check-grid">
+            <label class="check-pill"><input type="checkbox" name="items" value="repair"><span>각종 집수리</span></label>
+            <label class="check-pill"><input type="checkbox" name="items" value="indoor"><span>실내 교체·설치·복원</span></label>
+            <label class="check-pill"><input type="checkbox" name="items" value="outdoor"><span>실외 공간 복원</span></label>
+            <label class="check-pill"><input type="checkbox" name="items" value="parking"><span>주차시설물 시공</span></label>
+            <label class="check-pill"><input type="checkbox" name="items" value="pavers"><span>보도블록 시공</span></label>
+            <label class="check-pill"><input type="checkbox" name="items" value="facade"><span>건물 외벽 복원</span></label>
+            <label class="check-pill"><input type="checkbox" name="items" value="etc"><span>기타</span></label>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label for="address">주소 / 지역</label>
+          <input type="text" id="address" name="address" placeholder="예) 서울시 ○○구 ○○동">
+        </div>
+
+        <div class="field full">
+          <label for="detail">상세 내용</label>
+          <textarea id="detail" name="detail" placeholder="어떤 문제가 있는지, 언제부터 그랬는지 편하게 적어주세요."></textarea>
+        </div>
+
+        <div class="field full">
+          <label for="photo">사진 첨부 <span class="hint">(선택)</span></label>
+          <div class="file-drop">
+            <input type="file" id="photo" name="photo" accept="image/*" multiple>
+            현장 사진을 올려주시면 더 정확한 견적이 가능합니다
+          </div>
+        </div>
+
+        <label class="consent">
+          <input type="checkbox" required>
+          <span>견적 상담을 위한 개인정보 수집 및 이용에 동의합니다. 문의 응대 목적으로만 사용되며 이외 용도로 사용되지 않습니다.</span>
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-block">무료 견적 요청하기</button>
+      </form>
+
+      <div class="form-success" id="estimate-success">
+        <svg class="crescent crescent--center" viewBox="0 0 84 34" aria-hidden="true"><path d="M4,28 C20,4 64,4 80,28"/><path d="M14,26 C26,10 58,10 70,26"/></svg>
+        <h3>문의가 접수되었습니다</h3>
+        <p>빠르게 확인 후 기재해주신 연락처로 안내드리겠습니다. 급하신 경우 바로 전화 주세요.</p>
+        <p><a class="phone-big" style="display:inline-block;margin-top:14px" href="tel:010-3750-0835">010-3750-0835</a></p>
+      </div>
+    </div>
+
+    <aside class="contact-card">
+      <span class="eyebrow">Call</span>
+      <a class="phone-link" href="tel:010-3750-0835">010-3750-0835</a>
+      <p class="muted">전화 문의가 가장 빠릅니다. 사진을 미리 준비해 주시면 더욱 좋습니다.</p>
+      <ul class="info-list">
+        <li><span>상담 시간</span><span>연중무휴</span></li>
+        <li><span>출동 지역</span><span>수도권 및 인근</span></li>
+        <li><span>대응 공간</span><span>아파트 · 오피스텔 · 상가 · 빌라 · 학원 · 학교 · 병원</span></li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <span class="brand-mark"><img src="assets/logo-icon.jpg" alt="루나하우스케어 로고"></span>
+          <span class="brand-name">
+            <strong>루나하우스케어</strong>
+            <span>Luna House Care</span>
+          </span>
+        </a>
+        <p>각종 집수리부터 외벽 복원까지, 아파트·오피스텔·상가·빌라·학원·학교·병원까지 모든 공간의 문제를 해결합니다.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>MENU</h4>
+          <a href="index.html">홈</a>
+          <a href="cases.html">시공사례</a>
+          <a href="estimate.html">견적문의</a>
+        </div>
+        <div class="footer-col">
+          <h4>CONTACT</h4>
+          <a class="phone" href="tel:010-3750-0835">010-3750-0835</a>
+          <p>연중무휴 · 현장 문의 환영</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Luna House Care. All rights reserved.</span>
+      <span>루나하우스케어</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>
