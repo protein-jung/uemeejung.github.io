@@ -1143,6 +1143,73 @@ p {
   font-weight: 700;
 }
 
+/* -- cover page ------------------------------------------------------------- */
+
+.cover-page {
+  min-height: 100dvh;
+  display: flex;
+}
+
+.cover {
+  margin: auto;
+  width: 100%;
+  max-width: 380px;
+  padding: 48px 28px;
+  text-align: center;
+}
+
+.cover-mark {
+  width: 200px;
+  margin: 0 auto 22px;
+  padding: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+
+.cover-mark img {
+  border-radius: 2px;
+}
+
+.cover-name {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-variant: small-caps;
+  letter-spacing: 0.14em;
+  color: var(--brass-deep);
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+}
+
+.cover-tagline {
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+  line-height: 1.65;
+  margin-bottom: 34px;
+}
+
+.cover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.cover-actions .btn {
+  padding: 16px 20px;
+}
+
+.cover-phone {
+  display: inline-block;
+  font-family: var(--font-slab);
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 0.95rem;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 22px;
+}
+
 /* -- reveal on scroll ------------------------------------------------------------- */
 
 .reveal {
