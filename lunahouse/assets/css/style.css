@@ -4,15 +4,17 @@
 
 :root {
   --plaster: #f1e9da;
-  --plaster-deep: #e4d8c2;
+  --plaster-deep: #e0d3ba;
   --paper: #faf6ee;
-  --ink: #211c16;
+  --ink: #1c1712;
   --ink-soft: #5c564d;
-  --brass: #9c6b2e;
-  --brass-deep: #7c5322;
+  --brass: #96652a;
+  --brass-deep: #6f4a1f;
   --moss: #55603f;
   --line: rgba(33, 28, 22, 0.14);
-  --shadow: 0 24px 48px -28px rgba(33, 28, 22, 0.35);
+  --line-soft: rgba(33, 28, 22, 0.08);
+  --shadow: 0 28px 54px -30px rgba(28, 23, 18, 0.4);
+  --texture: url("../texture.jpg");
 
   --font-serif: "EB Garamond", "Noto Serif KR", serif;
   --font-kr: "Noto Sans KR", sans-serif;
@@ -31,7 +33,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--plaster);
+  background-color: var(--plaster);
+  background-image: var(--texture);
+  background-size: 220px 220px;
+  background-repeat: repeat;
+  background-blend-mode: soft-light;
   color: var(--ink);
   font-family: var(--font-kr);
   font-size: 16px;
@@ -377,39 +383,53 @@ p {
 .trust-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  align-items: baseline;
+  gap: 3px 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .trust-row span.label {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
   color: var(--ink-soft);
-  margin-right: 4px;
+  margin-right: 16px;
 }
 
 .chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 15px;
-  border-radius: 999px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.02rem;
+  color: var(--ink);
+}
+
+.chip:not(:last-child)::after {
+  content: "\00b7";
+  color: var(--brass);
+  margin: 0 12px;
+  font-style: normal;
 }
 
 .hero-figure {
   position: relative;
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
+  padding: 14px;
+  background: var(--paper);
   border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  transform: rotate(-1deg);
 }
 
 .hero-figure img {
   width: 100%;
   height: auto;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-figure {
+    transform: none;
+  }
 }
 
 /* -- sections --------------------------------------------------------------- */
@@ -419,7 +439,11 @@ p {
 }
 
 .section-alt {
-  background: var(--plaster-deep);
+  background-color: var(--plaster-deep);
+  background-image: var(--texture);
+  background-size: 220px 220px;
+  background-repeat: repeat;
+  background-blend-mode: soft-light;
 }
 
 .section-head {
@@ -459,16 +483,35 @@ p {
 }
 
 .service-card {
+  position: relative;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 32px 28px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 6px;
+  padding: 34px 30px;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.service-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
+  border-color: var(--brass);
   box-shadow: var(--shadow);
+}
+
+.service-card:hover::before {
+  transform: scaleX(1);
 }
 
 .service-icon {
@@ -499,8 +542,8 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .service-card:hover {
-    transform: none;
+  .service-card::before {
+    transition: none;
   }
 }
 
@@ -544,7 +587,7 @@ p {
 .case-card {
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -651,7 +694,10 @@ p {
 /* -- CTA band ------------------------------------------------------------- */
 
 .cta-band {
-  background: var(--ink);
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(150, 101, 42, 0.22), transparent 55%),
+    var(--ink);
+  border-top: 1px solid rgba(150, 101, 42, 0.4);
   color: var(--paper);
   padding: 72px 0;
 }
@@ -757,6 +803,126 @@ p {
   color: var(--ink-soft);
 }
 
+/* -- inquiry stats & list ------------------------------------------------------------- */
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-bottom: 56px;
+}
+
+.stat-tile {
+  text-align: center;
+  padding: 0 20px;
+  border-left: 1px solid var(--line);
+}
+
+.stat-tile:first-child {
+  border-left: none;
+}
+
+.stat-tile strong {
+  display: block;
+  font-family: var(--font-slab);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  color: var(--brass-deep);
+  margin-bottom: 6px;
+}
+
+.stat-tile span {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+}
+
+.inquiry-list {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 36px 40px;
+}
+
+.inquiry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.inquiry-head h3 {
+  font-size: 1.1rem;
+}
+
+.inquiry-head .muted {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.inquiry-list ul {
+  border-top: 1px solid var(--line-soft);
+}
+
+.inquiry-list li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 0.94rem;
+}
+
+.inquiry-list .who {
+  font-weight: 700;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.inquiry-list .what {
+  color: var(--ink-soft);
+  flex: 1;
+}
+
+.inquiry-list .when {
+  font-family: var(--font-slab);
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .stat-tile {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 0;
+  }
+
+  .stat-tile:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .inquiry-list {
+    padding: 28px 22px;
+  }
+
+  .inquiry-list li {
+    flex-wrap: wrap;
+    gap: 4px 18px;
+  }
+
+  .inquiry-list .who {
+    width: auto;
+  }
+}
+
 /* -- estimate form ------------------------------------------------------------- */
 
 .estimate-layout {
@@ -770,7 +936,7 @@ p {
 .contact-card {
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 36px;
 }
 
