@@ -1,4 +1,4 @@
-// Luna House Care — shared front-end behaviour (no backend yet)
+// Anjipsa Housing (AJH) — shared front-end behaviour (no backend yet)
 
 document.addEventListener("DOMContentLoaded", () => {
   // mobile nav toggle
