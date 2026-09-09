@@ -69,14 +69,19 @@
   <div class="wrap">
     <div class="filter-tabs" role="group" aria-label="시공 사례 필터">
       <button class="filter-tab" data-filter="all" aria-pressed="true">전체</button>
-      <button class="filter-tab" data-filter="indoor" aria-pressed="false">실내</button>
-      <button class="filter-tab" data-filter="outdoor" aria-pressed="false">실외</button>
+      <button class="filter-tab" data-filter="repair" aria-pressed="false">각종 집수리</button>
+      <button class="filter-tab" data-filter="indoor" aria-pressed="false">실내 복원</button>
+      <button class="filter-tab" data-filter="outdoor" aria-pressed="false">실외 복원</button>
+      <button class="filter-tab" data-filter="parking" aria-pressed="false">주차시설물</button>
+      <button class="filter-tab" data-filter="pavers" aria-pressed="false">보도블록</button>
+      <button class="filter-tab" data-filter="facade" aria-pressed="false">외벽 복원</button>
     </div>
 
     <div class="case-grid">
-      <article class="case-card" data-case-type="outdoor">
+      <article class="case-card" data-case-category="facade">
         <div class="case-thumb">
           <span class="case-tag outdoor">실외</span>
+          <span class="case-category">건물 외벽 복원</span>
           <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
           <span class="thumb-caption">사진 준비중</span>
         </div>
@@ -87,9 +92,10 @@
         </div>
       </article>
 
-      <article class="case-card" data-case-type="indoor">
+      <article class="case-card" data-case-category="indoor">
         <div class="case-thumb">
           <span class="case-tag">실내</span>
+          <span class="case-category">실내 교체·설치·복원</span>
           <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
           <span class="thumb-caption">사진 준비중</span>
         </div>
@@ -100,9 +106,10 @@
         </div>
       </article>
 
-      <article class="case-card" data-case-type="outdoor">
+      <article class="case-card" data-case-category="parking">
         <div class="case-thumb">
           <span class="case-tag outdoor">실외</span>
+          <span class="case-category">주차시설물 시공</span>
           <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
           <span class="thumb-caption">사진 준비중</span>
         </div>
@@ -113,9 +120,10 @@
         </div>
       </article>
 
-      <article class="case-card" data-case-type="outdoor">
+      <article class="case-card" data-case-category="pavers">
         <div class="case-thumb">
           <span class="case-tag outdoor">실외</span>
+          <span class="case-category">보도블록 시공</span>
           <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
           <span class="thumb-caption">사진 준비중</span>
         </div>
@@ -126,9 +134,10 @@
         </div>
       </article>
 
-      <article class="case-card" data-case-type="indoor">
+      <article class="case-card" data-case-category="indoor">
         <div class="case-thumb">
           <span class="case-tag">실내</span>
+          <span class="case-category">실내 교체·설치·복원</span>
           <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
           <span class="thumb-caption">사진 준비중</span>
         </div>
@@ -139,9 +148,10 @@
         </div>
       </article>
 
-      <article class="case-card" data-case-type="indoor">
+      <article class="case-card" data-case-category="indoor">
         <div class="case-thumb">
           <span class="case-tag">실내</span>
+          <span class="case-category">실내 교체·설치·복원</span>
           <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
           <span class="thumb-caption">사진 준비중</span>
         </div>
@@ -149,6 +159,34 @@
           <h3>○○빌라 계단실 도장 및 조명 교체</h3>
           <p>공용 계단실 벽면 도장과 노후 조명을 함께 교체했습니다.</p>
           <span class="case-meta">빌라 · 공용공간</span>
+        </div>
+      </article>
+
+      <article class="case-card" data-case-category="outdoor">
+        <div class="case-thumb">
+          <span class="case-tag outdoor">실외</span>
+          <span class="case-category">실외 공간 복원</span>
+          <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
+          <span class="thumb-caption">사진 준비중</span>
+        </div>
+        <div class="case-body">
+          <h3>○○빌라 옥상 테라스 방수 및 정비</h3>
+          <p>방치되어 있던 옥상 테라스 바닥 방수와 난간을 새로 정비했습니다.</p>
+          <span class="case-meta">빌라 · 옥상/테라스</span>
+        </div>
+      </article>
+
+      <article class="case-card" data-case-category="repair">
+        <div class="case-thumb">
+          <span class="case-tag">실내</span>
+          <span class="case-category">각종 집수리</span>
+          <svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M16 14l3-5h10l3 5"/><circle cx="24" cy="26" r="7"/></svg>
+          <span class="thumb-caption">사진 준비중</span>
+        </div>
+        <div class="case-body">
+          <h3>○○아파트 화장실 누수 및 타일 보수</h3>
+          <p>배관 누수 원인을 찾아 해결하고 파손된 타일까지 함께 보수했습니다.</p>
+          <span class="case-meta">아파트 · 화장실</span>
         </div>
       </article>
     </div>
