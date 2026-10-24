@@ -379,3 +379,36 @@ footer{display:flex;justify-content:space-between;color:var(--dim);padding:28px 
   html.js .rv{opacity:1;transform:none}
   html{scroll-behavior:auto}
 }
+
+/* ---- NeuroRoomie mode ----------------------------------------------------
+   Enterprise is no longer a section you scroll past: the nav switch next to
+   the logo swaps the whole page for it. Hiding is done in CSS so the markup
+   (and the anchor links into it) stay as they are. */
+.brand{display:flex;align-items:center;gap:14px}
+.nr-switch{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 85;font-weight:700;
+  font-size:14px;letter-spacing:-.01em;display:inline-flex;align-items:center;
+  gap:7px;padding:7px 14px 7px 11px;border:1px solid var(--line);border-radius:100px;background:none;
+  color:var(--mute);cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+.nr-switch sup{font-size:.62em;margin-left:1px}
+.nr-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.45;transition:opacity .2s}
+.nr-switch:hover{color:var(--ink);border-color:var(--ink)}
+.nr-switch:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.nr-switch[aria-pressed="true"]{background:oklch(0.47 0.26 264);border-color:transparent;color:#fff}
+.nr-switch[aria-pressed="true"] .nr-dot{opacity:1}
+nav.light .nr-switch{color:#77756d;border-color:rgba(15,15,15,.2)}
+nav.light .nr-switch:hover{color:#0f0f0f;border-color:#0f0f0f}
+nav.light .nr-switch[aria-pressed="true"]{color:#fff;border-color:transparent}
+
+#venture{display:none}
+body.nr>*:not(#venture):not(nav):not(#cur){display:none}
+body.nr #venture{display:block;margin-top:0;padding-top:calc(var(--navh,81px) + 20px);min-height:100vh}
+
+.nr-cta{margin-top:30px}
+.nr-cta a{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 62;font-weight:800;
+  text-transform:uppercase;font-size:15px;letter-spacing:.02em;display:inline-flex;align-items:center;
+  gap:.5em;padding:15px 28px;border-radius:100px;background:oklch(0.47 0.26 264);color:#fff;
+  transition:transform .25s,box-shadow .25s}
+.nr-cta a:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(15,15,15,.22)}
+.nr-cta a i{font-style:normal;transition:transform .3s}
+.nr-cta a:hover i{transform:translate(4px,-4px)}
+@media (max-width:640px){.nr-switch{font-size:11px;padding:6px 11px 6px 9px;gap:6px}.brand{gap:10px}}

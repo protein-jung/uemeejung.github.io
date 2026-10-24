@@ -386,6 +386,46 @@
     });
   })();
 
+  /* ---------------- NeuroRoomie mode switch ---------------- */
+  (function mode() {
+    var btn = $('#nrToggle');
+    if (!btn) return;
+
+    function setMode(on) {
+      document.body.classList.toggle('nr', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      // The wordmark fits itself to the container width and the canvases size
+      // off clientWidth; both read 0 while the section is display:none, so they
+      // have to measure again once it is on screen. Both already listen for
+      // resize, and the nav theme/underline state is recomputed on scroll.
+      dispatchEvent(new Event('resize'));
+      dispatchEvent(new Event('scroll'));
+      // The wordmark reveal is driven by an IntersectionObserver that cannot fire
+      // for a display:none element, and once visible the line is wider than the
+      // viewport, so the 0.3 threshold may never be met. Reveal it here instead —
+      // the per-letter transition delays still play.
+      var w = $('#vWord');
+      if (on && w) w.classList.add('in');
+    }
+
+    btn.addEventListener('click', function () {
+      var on = !document.body.classList.contains('nr');
+      setMode(on);
+      scrollTo(0, 0);
+    });
+
+    // In NeuroRoomie mode every other section is hidden, so an anchor pointing
+    // at one would scroll nowhere. Leave the mode first, then let the browser
+    // do the jump it was going to do anyway.
+    document.addEventListener('click', function (e) {
+      if (!document.body.classList.contains('nr')) return;
+      var t = e.target instanceof Element ? e.target : null;
+      var a = t && t.closest('a[href^="#"]');
+      if (!a || a.getAttribute('href') === '#venture') return;
+      setMode(false);
+    });
+  })();
+
   /* ---------------- email link (set by JS, as in the design) ---------------- */
   (function mail() {
     var m = document.getElementById('mailLink');
