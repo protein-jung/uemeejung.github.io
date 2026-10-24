@@ -177,7 +177,7 @@
   "org": "연세대학교 LIVFIT",
   "contact": "junguemee@yonsei.ac.kr",
   "adminPw": "livfit-admin",
-  "apiBase": "",
+  "apiBase": "https://admin.uemeejung.com",
   "introTime": "약 5분",
   "durationAlertSec": 720,
   "consentText": "✓ 연세대 LIVFIT 팀의 주거공간 연구에 쓰여요\n✓ 5분이면 끝나요\n✓ 이름, 연락처는 묻지 않아요\n✓ 응답은 통계 분석과 연구 발표에만 써요\n✓ 언제든 창을 닫고 그만둘 수 있어요 (중간에 멈춘 응답은 쓰지 않아요)\n\n문의 junguemee@yonsei.ac.kr",
@@ -766,6 +766,9 @@ function lfSelftest(){
         else if (m === "is_repeat") row[m] = st.isRepeat;
       });
       row["A8"] = st.answers["A8"] !== undefined ? st.answers["A8"] : "";
+      st.result = st.result || lfScore(st.answers);
+      row["유형"] = st.result.type;
+      row["궁합"] = st.result.fit === null ? "" : Math.round(st.result.fit);
       var res = LS.get(K.res, []); res.push(row); LS.set(K.res, res);
       if (API("/api/responses")) apiPost("/api/responses", row, false, function(){
         var bn = document.getElementById("sendFail"); if (bn) bn.style.display = "block";

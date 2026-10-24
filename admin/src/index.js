@@ -87,6 +87,12 @@ export default {
 
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
 
+    /* 비밀번호가 설정되지 않았으면 열람 경로를 모두 닫는다 (빈 비밀번호로 통과되지 않도록). */
+    const locked = !env.ADMIN_PW;
+    if (locked && (p.startsWith("/api/admin/") || p === "/api/login")) {
+      return json({ error: "ADMIN_PW secret not set" }, { status: 503 });
+    }
+
     /* ---------- 수집 (공개) ---------- */
     const collect = p.match(/^\/api\/(responses|contacts|dropoff)$/);
     if (collect && req.method === "POST") {
@@ -103,7 +109,9 @@ export default {
     /* ---------- 로그인 ---------- */
     if (p === "/api/login" && req.method === "POST") {
       const { pw } = await req.json().catch(() => ({}));
-      const ok = (await hmac(env.ADMIN_PW, "pw")) === (await hmac(String(pw || ""), "pw"));
+      if (!pw) return json({ ok: false }, { status: 401 });
+      /* 해시끼리 비교해 길이·접두사로 새어 나가지 않게 한다 */
+      const ok = (await hmac(env.ADMIN_PW, "pw")) === (await hmac(String(pw), "pw"));
       if (!ok) return json({ ok: false }, { status: 401 });
       return json(
         { ok: true },
