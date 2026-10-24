@@ -392,6 +392,10 @@
     if (!btn) return;
 
     function setMode(on) {
+      // The burger panel is hidden in NeuroRoomie mode; close it first so it
+      // does not leave the scroll lock behind.
+      var burger = $('#burger');
+      if (burger && burger.classList.contains('on')) burger.click();
       document.body.classList.toggle('nr', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       // The wordmark fits itself to the container width and the canvases size

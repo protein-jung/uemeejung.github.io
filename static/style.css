@@ -400,6 +400,9 @@ nav.light .nr-switch:hover{color:#0f0f0f;border-color:#0f0f0f}
 nav.light .nr-switch[aria-pressed="true"]{color:#fff;border-color:transparent}
 
 #venture{display:none}
+/* In NeuroRoomie mode the rest of the site is not on screen, so neither are
+   its links. The switch is the only way back, on desktop and mobile alike. */
+body.nr .nav-links,body.nr .burger,body.nr .mnav{display:none}
 body.nr>*:not(#venture):not(nav):not(#cur){display:none}
 body.nr #venture{display:block;margin-top:0;padding-top:calc(var(--navh,81px) + 20px);min-height:100vh}
 
