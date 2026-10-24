@@ -176,7 +176,6 @@
   "publicName": "내 방 vs 나 — 공간 궁합 테스트",
   "org": "연세대학교 LIVFIT",
   "contact": "junguemee@yonsei.ac.kr",
-  "adminPw": "livfit-admin",
   "apiBase": "https://admin.uemeejung.com",
   "introTime": "약 5분",
   "durationAlertSec": 720,
@@ -961,96 +960,11 @@ function lfSelftest(){
     document.getElementById("ovclose").onclick = function(){ ov.remove(); };
   }
 
-  /* ---------- 관리자 ---------- */
-  function csvEscape(v){ if (v === null || v === undefined) return ""; var s = String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
-  function toCsv(rows){
-    if (!rows.length) return "";
-    var cols = []; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if (cols.indexOf(k) < 0) cols.push(k); }); });
-    return "\uFEFF" + [cols.join(",")].concat(rows.map(function(r){ return cols.map(function(c){ return csvEscape(r[c]); }).join(","); })).join("\r\n");
-  }
-  function dl(name, text){ var b = new Blob([text], { type: "text/csv;charset=utf-8" }); var u = URL.createObjectURL(b); var a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 4000); }
-  V.admin = function(){
-    var ok = sessionStorage.getItem("lf_admin") === "1";
-    if (!ok) {
-      h('<div class="card"><h2>관리자</h2><div style="position:relative">'
-        + '<input type="password" id="pw" placeholder="관리자 비밀번호" style="padding-right:44px">'
-        + '<button type="button" id="pweye" aria-pressed="false" aria-label="비밀번호 보기" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;padding:6px;line-height:0;color:#8a8880;cursor:pointer">'
-        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M1.9 12S5.6 5.6 12 5.6 22.1 12 22.1 12 18.4 18.4 12 18.4 1.9 12 1.9 12Z"/><circle cx="12" cy="12" r="3.1"/><line id="pwslash" x1="4.2" y1="19.8" x2="19.8" y2="4.2" style="display:none"/></svg></button></div>' + btnNext("확인", false, "go") + "</div>");
-      document.getElementById("pweye").onclick = function(){
-        var pw = document.getElementById("pw"), show = pw.type === "password";
-        pw.type = show ? "text" : "password";
-        document.getElementById("pwslash").style.display = show ? "inline" : "none";
-        this.setAttribute("aria-pressed", show ? "true" : "false");
-        this.setAttribute("aria-label", show ? "비밀번호 숨기기" : "비밀번호 보기");
-        pw.focus();
-      };
-      document.getElementById("go").onclick = function(){
-        if (document.getElementById("pw").value === CONFIG.adminPw) { sessionStorage.setItem("lf_admin", "1"); V.admin(); }
-        else alert("비밀번호가 다릅니다.");
-      };
-      return;
-    }
-    var self = lfSelftest();
-    var res = LS.get(K.res, []), con = LS.get(K.con, []), drop = LS.get(K.drop, []);
-    var durs = res.map(function(r){ return r.duration_sec; }).filter(function(n){ return typeof n === "number"; });
-    var avg = durs.length ? Math.round(durs.reduce(function(a, b){ return a + b; }, 0) / durs.length) : 0;
-    var warn = avg > CONFIG.durationAlertSec ? '<div class="banner">평균 소요 시간이 ' + Math.round(avg / 60) + "분입니다 — 12분 초과. 지시서 8장에 따라 문항 수 조정을 팀에 알리세요.</div>" : "";
-    h('<div class="card"><h2>관리자</h2>' + warn
-      + "<p>자가검산(예시-001): <b style='color:" + (self.ok ? "var(--ok)" : "var(--warn)") + "'>" + (self.ok ? "PASS" : "FAIL — " + self.fails.join(", ")) + "</b></p>"
-      + '<p id="admstats">' + (serverMode
-          ? "서버 통계를 불러오는 중…"
-          : "응답 " + res.length + "건 · 연락처 " + con.length + "건 · 이탈 기록 " + drop.length + "건 · 평균 소요 " + Math.round(avg / 60) + "분 " + avg + "초") + "</p>"
-      + '<p class="muted">데이터 기준: ' + (serverMode
-          ? "서버 data/ 폴더 — 아래 버튼으로 서버에 쌓인 전체 응답이 CSV로 내려옵니다"
-          : "이 기기 브라우저 저장(로컬 모드)") + "</p>"
-      + '<button class="btn" id="exR">responses.csv 내려받기</button>'
-      + '<button class="btn ghost" id="exC">contacts.csv 내려받기</button>'
-      + '<button class="btn ghost" id="exD">dropoff.csv 내려받기</button>'
-      + '<button class="btn ghost" id="clrC">연락처 전체 삭제</button>'
-      + '<button class="btn ghost" id="clrR">테스트 응답 전체 삭제 (데모 초기화)</button>'
-      + '<p class="muted">응답 데이터에는 이름·연락처가 없으며, 연락처는 contacts.csv로만 분리 보관됩니다 (지시서 7장).</p></div>');
-    var ex = function(type){
-      if (serverMode) location.href = API("/api/export") + "?type=" + type + "&pw=" + encodeURIComponent(CONFIG.adminPw);
-      else {
-        var map = { responses: res, contacts: con, dropoff: drop };
-        dl("livfit_" + type + "_" + new Date().toISOString().slice(0, 10) + ".csv", toCsv(map[type]));
-      }
-    };
-    document.getElementById("exR").onclick = function(){ ex("responses"); };
-    document.getElementById("exC").onclick = function(){ ex("contacts"); };
-    document.getElementById("exD").onclick = function(){ ex("dropoff"); };
-    if (serverMode && typeof fetch === "function") {
-      fetch(API("/api/stats") + "?pw=" + encodeURIComponent(CONFIG.adminPw))
-        .then(function(r){ return r.json(); })
-        .then(function(s){
-          var el = document.getElementById("admstats"); if (!el) return;
-          var txt = "응답 " + s.responses + "건 · 연락처 " + s.contacts + "건 · 이탈 기록 " + s.dropoff + "건 · 평균 소요 " + Math.round((s.avgDurationSec || 0) / 60) + "분 " + (s.avgDurationSec || 0) + "초";
-          if (s.avgDurationSec > CONFIG.durationAlertSec) txt += " — ⚠ 12분 초과 (지시서 8장: 문항 수 조정 검토)";
-          el.textContent = txt;
-        })
-        .catch(function(){
-          var el = document.getElementById("admstats");
-          if (el) el.textContent = "서버 통계 조회 실패 — 서버 상태를 확인하세요. (이 기기 로컬 백업 기준: 응답 " + res.length + "건)";
-        });
-    }
-    document.getElementById("clrC").onclick = function(){
-      if (!confirm("연락처를 전체 삭제할까요? 되돌릴 수 없습니다.")) return;
-      if (serverMode) fetch(API("/api/contacts/clear") + "?pw=" + encodeURIComponent(CONFIG.adminPw), { method: "POST" }).then(function(){ alert("삭제되었습니다."); V.admin(); });
-      else { LS.set(K.con, []); alert("삭제되었습니다."); V.admin(); }
-    };
-    document.getElementById("clrR").onclick = function(){
-      if (!confirm("응답을 전체 삭제할까요? 되돌릴 수 없습니다.\n실제 수집 시작 전 데모 데이터 초기화용입니다.")) return;
-      if (serverMode) fetch(API("/api/responses/clear") + "?pw=" + encodeURIComponent(CONFIG.adminPw), { method: "POST" }).then(function(){ alert("삭제되었습니다."); V.admin(); });
-      else { LS.set(K.res, []); LS.set(K.drop, []); alert("삭제되었습니다."); V.admin(); }
-    };
-  };
-
   /* ---------- 부팅 ---------- */
   var self = lfSelftest();
   if (!self.ok) { console.error("자가검산 FAIL", self.fails); var bn = document.createElement("div"); bn.className = "banner"; bn.style.margin = "12px 18px 0"; bn.textContent = "⚠ 자가검산 실패 — 개발팀에 즉시 보고하세요: " + self.fails.join(", "); document.body.insertBefore(bn, document.getElementById("app")); }
   else console.info("자가검산 PASS (예시-001 = 지시서 4장 기대값 일치)");
   if (serverMode) setTimeout(flushLocal, 400);
-  if (location.hash === "#admin") { st = { flow: [{ t: "admin" }], idx: 0, answers: {}, result: null }; V.admin(); return; }
   renderIntroDirect();
 })();
 </script>
