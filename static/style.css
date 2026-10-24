@@ -406,12 +406,12 @@ body.nr .nav-links,body.nr .burger,body.nr .mnav{display:none}
 body.nr>*:not(#venture):not(nav):not(#cur){display:none}
 body.nr #venture{display:block;margin-top:0;padding-top:calc(var(--navh,81px) + 20px);min-height:100vh}
 
-.nr-cta{margin-top:30px}
-.nr-cta a{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 62;font-weight:800;
-  text-transform:uppercase;font-size:15px;letter-spacing:.02em;display:inline-flex;align-items:center;
-  gap:.5em;padding:15px 28px;border-radius:100px;background:oklch(0.47 0.26 264);color:#fff;
-  transition:transform .25s,box-shadow .25s}
-.nr-cta a:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(15,15,15,.22)}
-.nr-cta a i{font-style:normal;transition:transform .3s}
-.nr-cta a:hover i{transform:translate(4px,-4px)}
+/* The tests are a list because there will be more of them: another one is
+   another .v-row, the same row the sections below are built from. */
+.nr-tests{margin-top:34px}
+.nr-tests-hd{display:flex;justify-content:space-between;color:var(--g);
+  border-bottom:1px solid var(--ik);padding-bottom:10px}
+.nr-tests .v-row{cursor:pointer;color:inherit}
+.nr-tests .v-row .x i{font-style:normal;display:inline-block;transition:transform .3s}
+.nr-tests .v-row:hover .x i{transform:translate(4px,-4px)}
 @media (max-width:640px){.nr-switch{font-size:11px;padding:6px 11px 6px 9px;gap:6px}.brand{gap:10px}}
