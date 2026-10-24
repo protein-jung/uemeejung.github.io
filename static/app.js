@@ -430,6 +430,21 @@
     });
   })();
 
+  /* ---------------- back to the top, without the hash ---------------- */
+  (function toTop() {
+    // The logo and the footer link are a way back up, not a destination, so
+    // they should not leave #hero sitting in the address bar. The href stays
+    // as it is: it is what works with JS off, and what the mode switch reads.
+    document.addEventListener('click', function (e) {
+      var t = e.target instanceof Element ? e.target : null;
+      var a = t && t.closest('a[href="#hero"]');
+      if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+      e.preventDefault();
+      scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    });
+  })();
+
   /* ---------------- email link (set by JS, as in the design) ---------------- */
   (function mail() {
     var m = document.getElementById('mailLink');

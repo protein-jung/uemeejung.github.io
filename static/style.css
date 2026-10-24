@@ -131,6 +131,14 @@ html.js .rv.in{opacity:1;transform:none}
 .portrait:hover img{transform:scale(1.04)}
 .portrait .scan{position:absolute;left:0;right:0;height:1px;background:var(--acc);box-shadow:0 0 14px var(--acc);animation:scan 4.5s ease-in-out infinite;opacity:.8}
 @keyframes scan{0%,100%{top:8%}50%{top:92%}}
+/* What the line has passed on the way down is filled in with text; on the way
+   back up it empties again. Same duration and easing as .scan, and the clip
+   edge is set to the same percentages, so the two stay on one timeline. */
+.portrait .scan-fill{position:absolute;inset:0;padding:12px;overflow:hidden;
+  background:rgba(11,12,13,.9);color:var(--acc);font-family:var(--mono);font-size:9px;
+  line-height:1.5;letter-spacing:.02em;word-break:break-word;
+  clip-path:inset(0 0 92% 0);animation:scanFill 4.5s ease-in-out infinite}
+@keyframes scanFill{0%,100%{clip-path:inset(0 0 92% 0)}50%{clip-path:inset(0 0 8% 0)}}
 .portrait .tag{position:absolute;left:12px;bottom:12px;color:var(--ink);background:rgba(0,0,0,.5);padding:4px 8px;backdrop-filter:blur(4px)}
 .about-txt .lead{font-family:var(--serif);font-size:clamp(28px,2.6vw,40px);line-height:1.12;letter-spacing:-.01em;margin-bottom:36px;text-wrap:pretty}
 .about-txt .lead em{color:var(--acc)}
@@ -412,7 +420,21 @@ body.nr #venture{display:block;margin-top:0;padding-top:calc(var(--navh,81px) + 
 .nr-tests{margin-top:34px}
 .nr-tests-hd{display:flex;justify-content:space-between;color:var(--g);
   border-bottom:1px solid var(--ik);padding-bottom:10px}
-.nr-tests .v-row{cursor:pointer;color:inherit}
+.nr-tests .v-row{position:relative;overflow:hidden;cursor:pointer;color:inherit}
 .nr-tests .v-row .x i{font-style:normal;display:inline-block;transition:transform .3s}
 .nr-tests .v-row:hover .x i{transform:translate(4px,-4px)}
+/* Hovering a test shows that test's own cover — its blue and the four room
+   cards, at the angles the cover itself uses — rather than the black the rest
+   of the section inverts to. */
+.nr-tests .v-row:hover{background:#3451E8;color:#fff}
+.nr-cards{position:absolute;right:124px;top:50%;display:flex;gap:12px;
+  translate:24px -50%;opacity:0;pointer-events:none;transition:opacity .35s,translate .35s}
+.nr-tests .v-row:hover .nr-cards{opacity:1;translate:0 -50%}
+.nr-cards img{width:58px;height:58px;object-fit:cover;background:#fff;
+  padding:4px 4px 13px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.nr-cards img:nth-child(1){rotate:-9deg}
+.nr-cards img:nth-child(2){rotate:7deg}
+.nr-cards img:nth-child(3){rotate:-4deg}
+.nr-cards img:nth-child(4){rotate:10deg}
+@media (max-width:1000px){.nr-cards{display:none}}
 @media (max-width:640px){.logo,.brand-div,.nr-switch{font-size:19px}.brand{gap:8px}}

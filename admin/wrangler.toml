@@ -1,0 +1,11 @@
+name = "uemee-admin"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# custom_domain = true 면 wrangler 가 admin.uemeejung.com DNS 레코드까지 만든다.
+routes = [{ pattern = "admin.uemeejung.com", custom_domain = true }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "uemee"
+database_id = "PUT-D1-ID-HERE"
