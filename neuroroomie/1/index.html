@@ -972,7 +972,18 @@ function lfSelftest(){
   V.admin = function(){
     var ok = sessionStorage.getItem("lf_admin") === "1";
     if (!ok) {
-      h('<div class="card"><h2>관리자</h2><input type="text" id="pw" placeholder="관리자 비밀번호" style="-webkit-text-security:disc">' + btnNext("확인", false, "go") + "</div>");
+      h('<div class="card"><h2>관리자</h2><div style="position:relative">'
+        + '<input type="password" id="pw" placeholder="관리자 비밀번호" style="padding-right:44px">'
+        + '<button type="button" id="pweye" aria-pressed="false" aria-label="비밀번호 보기" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;padding:6px;line-height:0;color:#8a8880;cursor:pointer">'
+        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M1.9 12S5.6 5.6 12 5.6 22.1 12 22.1 12 18.4 18.4 12 18.4 1.9 12 1.9 12Z"/><circle cx="12" cy="12" r="3.1"/><line id="pwslash" x1="4.2" y1="19.8" x2="19.8" y2="4.2" style="display:none"/></svg></button></div>' + btnNext("확인", false, "go") + "</div>");
+      document.getElementById("pweye").onclick = function(){
+        var pw = document.getElementById("pw"), show = pw.type === "password";
+        pw.type = show ? "text" : "password";
+        document.getElementById("pwslash").style.display = show ? "inline" : "none";
+        this.setAttribute("aria-pressed", show ? "true" : "false");
+        this.setAttribute("aria-label", show ? "비밀번호 숨기기" : "비밀번호 보기");
+        pw.focus();
+      };
       document.getElementById("go").onclick = function(){
         if (document.getElementById("pw").value === CONFIG.adminPw) { sessionStorage.setItem("lf_admin", "1"); V.admin(); }
         else alert("비밀번호가 다릅니다.");

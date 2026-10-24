@@ -8,4 +8,4 @@ routes = [{ pattern = "admin.uemeejung.com", custom_domain = true }]
 [[d1_databases]]
 binding = "DB"
 database_name = "uemee"
-database_id = "PUT-D1-ID-HERE"
+database_id = "53862592-6955-4031-a682-75726c2fa015"

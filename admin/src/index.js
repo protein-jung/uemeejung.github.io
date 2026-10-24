@@ -181,6 +181,12 @@ const PAGE = `<!doctype html>
  #login{max-width:320px;margin:18vh auto;padding:28px;background:#fff;border:1px solid var(--line);border-radius:12px}
  input,button{font:inherit}
  input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+ .pwrow{position:relative;margin-top:10px}
+ .pwrow input{margin-top:0;padding-right:42px}
+ .pweye{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;padding:8px;line-height:0;color:#8a8880}
+ .pweye:hover{color:var(--ink)}
+ .pweye .slash{display:none}
+ .pweye[aria-pressed="true"] .slash{display:inline}
  button{padding:10px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer}
  #shell{display:none;grid-template-columns:200px 1fr;min-height:100vh}
  nav{background:#fff;border-right:1px solid var(--line);padding:20px 0}
@@ -202,7 +208,16 @@ const PAGE = `<!doctype html>
 </style></head><body>
 <div id="login">
   <div style="font-weight:700">uemeejung 관리자</div>
-  <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+  <div class="pwrow">
+    <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+    <button type="button" class="pweye" id="pweye" aria-pressed="false" aria-label="비밀번호 보기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M1.9 12S5.6 5.6 12 5.6 22.1 12 22.1 12 18.4 18.4 12 18.4 1.9 12 1.9 12Z"/>
+        <circle cx="12" cy="12" r="3.1"/>
+        <line class="slash" x1="4.2" y1="19.8" x2="19.8" y2="4.2"/>
+      </svg>
+    </button>
+  </div>
   <button style="width:100%;margin-top:10px" id="go">들어가기</button>
   <p id="err" style="color:#b02a2a;font-size:12px;display:none">비밀번호가 맞지 않습니다</p>
 </div>
@@ -271,6 +286,13 @@ document.getElementById("go").onclick = function(){
     .then(function(j){ if (j.ok) show(true); else document.getElementById("err").style.display = "block"; });
 };
 document.getElementById("pw").onkeydown = function(e){ if (e.key === "Enter") document.getElementById("go").click(); };
+document.getElementById("pweye").onclick = function(){
+  var pw = document.getElementById("pw"), show = pw.type === "password";
+  pw.type = show ? "text" : "password";
+  this.setAttribute("aria-pressed", show ? "true" : "false");
+  this.setAttribute("aria-label", show ? "비밀번호 숨기기" : "비밀번호 보기");
+  pw.focus();
+};
 document.getElementById("out").onclick = function(){ fetch("/api/logout").then(function(){ location.reload(); }); };
 document.querySelectorAll("nav a[data-v]").forEach(function(a){ a.onclick = function(){ view(a.dataset.v); }; });
 
