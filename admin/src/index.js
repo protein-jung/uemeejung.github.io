@@ -61,6 +61,27 @@ async function store(env, kind, test, row) {
   return new Response("ok");
 }
 
+/* 문항 번호(A1, B3 …)만 보여 주면 읽는 사람이 매번 질문지를 대조해야 한다.
+   문안은 테스트 페이지가 이미 가지고 있으므로 거기서 읽어 온다 — 문안을 두 곳에 두면 언젠가 갈라진다.
+   못 읽으면 번호로 그대로 보여 준다. */
+let QMAP = null;
+async function labels() {
+  if (QMAP) return QMAP;
+  QMAP = {};
+  try {
+    const res = await fetch(`${SITE}/neuroroomie/1/`, { cf: { cacheTtl: 3600, cacheEverything: true } });
+    const html = await res.text();
+    const m = html.match(/<script type="application\/json" id="lf-config">([\s\S]*?)<\/script>/);
+    const cfg = JSON.parse(m[1]);
+    (cfg.items || []).forEach((it) => {
+      if (it.id && it.text) QMAP[it.id] = it.text;
+    });
+  } catch {
+    /* 빈 채로 둔다 */
+  }
+  return QMAP;
+}
+
 function toCsv(rows) {
   if (!rows.length) return "";
   const cols = [];
@@ -145,6 +166,8 @@ export default {
         return json({ responses: r, contacts: c, dropoff: d, avgDurationSec: avg });
       }
 
+      if (kind === "labels") return json(await labels());
+
       if (KINDS[kind]) {
         const data = await rows(env, kind, test);
         if (url.searchParams.get("format") === "csv") {
@@ -205,6 +228,12 @@ const PAGE = `<!doctype html>
  th,td{border-bottom:1px solid var(--line);padding:7px 10px;text-align:left}
  th{position:sticky;top:0;background:#fff;font-weight:600}
  .ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+ tr.pick{cursor:pointer} tr.pick:hover td{background:#f3f6ff}
+ th.lead,td.lead{background:#fbfaf8}
+ .detail{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:14px}
+ .detail dl{display:grid;grid-template-columns:220px 1fr;gap:2px 16px;margin:12px 0 0;font-size:13px}
+ .detail dt{color:#777;overflow-wrap:anywhere}
+ .detail dd{margin:0;overflow-wrap:anywhere}
 </style></head><body>
 <div id="login">
   <div style="font-weight:700">uemeejung 관리자</div>
@@ -243,14 +272,51 @@ function api(path){ return fetch("/api/admin/" + path, { credentials:"same-origi
 
 function esc(s){ return String(s === undefined || s === null ? "" : s).replace(/[&<>"]/g, function(c){ return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]; }); }
 
+/* 한 응답에 문항이 50개 넘어가서 전부 기둥으로 펼치면 읽힐 표가 아니다.
+   알아볼 수 있는 칸 몇 개만 앞에 세우고, 나머지는 줄을 눌렀을 때 아래에 펼친다. */
+var LEAD = ["수집시각", "응답ID", "유형", "궁합", "duration_sec", "마지막문항"];
+var HEAD = { duration_sec: "소요(초)" };
+var LBL = {};
+var LAST = [];
+
+function fmt(c, v){
+  if (v === undefined || v === null || v === "") return "";
+  if (c === "수집시각") return String(v).replace("T", " ").slice(0, 16);
+  if (c === "duration_sec") return Math.floor(v / 60) + "분 " + (v % 60) + "초";
+  return v;
+}
+
 function table(rows){
   if (!rows.length) return '<p class="sub">아직 수집된 데이터가 없습니다.</p>';
-  var cols = [];
-  rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if (cols.indexOf(k) < 0) cols.push(k); }); });
-  return '<div class="wrap"><table><thead><tr>' + cols.map(function(c){ return "<th>" + esc(c) + "</th>"; }).join("")
-    + "</tr></thead><tbody>" + rows.map(function(r){
-        return "<tr>" + cols.map(function(c){ return "<td>" + esc(r[c]) + "</td>"; }).join("") + "</tr>";
+  LAST = rows;
+  var rest = [];
+  rows.forEach(function(r){
+    Object.keys(r).forEach(function(k){ if (LEAD.indexOf(k) < 0 && rest.indexOf(k) < 0) rest.push(k); });
+  });
+  var lead = LEAD.filter(function(c){ return rows.some(function(r){ return r[c] !== undefined; }); });
+  var cols = lead.concat(rest);
+  return '<p class="sub">줄을 누르면 그 응답의 모든 문항을 위에서 펼쳐 보여줍니다.</p>'
+    + '<div id="detail"></div>'
+    + '<div class="wrap"><table><thead><tr>'
+    + cols.map(function(c, i){ return '<th' + (i < lead.length ? ' class="lead"' : "")
+        + (LBL[c] ? ' title="' + esc(LBL[c]) + '"' : "") + ">" + esc(HEAD[c] || c) + "</th>"; }).join("")
+    + "</tr></thead><tbody>" + rows.map(function(r, i){
+        return '<tr class="pick" data-i="' + i + '">' + cols.map(function(c, j){
+          return "<td" + (j < lead.length ? ' class="lead"' : "") + ">" + esc(fmt(c, r[c])) + "</td>";
+        }).join("") + "</tr>";
       }).join("") + "</tbody></table></div>";
+}
+
+function detail(i){
+  var r = LAST[i];
+  if (!r) return;
+  document.getElementById("detail").innerHTML = '<div class="detail"><button class="ghost" id="dclose">닫기</button><dl>'
+    + Object.keys(r).map(function(k){
+        var name = LBL[k] ? k + ". " + LBL[k] : HEAD[k] || k;
+        return "<dt>" + esc(name) + "</dt><dd>" + esc(fmt(k, r[k])) + "</dd>";
+      }).join("") + "</dl></div>";
+  document.getElementById("dclose").onclick = function(){ document.getElementById("detail").innerHTML = ""; };
+  M.scrollTop = 0;
 }
 
 function view(v){
@@ -271,13 +337,16 @@ function view(v){
     M.innerHTML = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + " · " + rows.length + '건</p>'
       + '<div class="bar"><button class="ghost" id="csv">CSV 내려받기</button></div>' + table(rows);
     document.getElementById("csv").onclick = function(){ location.href = "/api/admin/" + v + "?format=csv"; };
+    M.querySelectorAll("tr.pick").forEach(function(tr){ tr.onclick = function(){ detail(+tr.dataset.i); }; });
   }).catch(function(){});
 }
 
 function show(ok){
   document.getElementById("login").style.display = ok ? "none" : "block";
   document.getElementById("shell").style.display = ok ? "grid" : "none";
-  if (ok) view("stats");
+  if (!ok) return;
+  api("labels").then(function(m){ LBL = m || {}; }).catch(function(){});
+  view("stats");
 }
 document.getElementById("go").onclick = function(){
   fetch("/api/login", { method:"POST", headers:{ "Content-Type":"application/json" },
