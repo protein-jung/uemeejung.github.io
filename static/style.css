@@ -384,20 +384,21 @@ footer{display:flex;justify-content:space-between;color:var(--dim);padding:28px 
    Enterprise is no longer a section you scroll past: the nav switch next to
    the logo swaps the whole page for it. Hiding is done in CSS so the markup
    (and the anchor links into it) stay as they are. */
-.brand{display:flex;align-items:center;gap:14px}
-.nr-switch{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 85;font-weight:700;
-  font-size:14px;letter-spacing:-.01em;display:inline-flex;align-items:center;
-  gap:7px;padding:7px 14px 7px 11px;border:1px solid var(--line);border-radius:100px;background:none;
-  color:var(--mute);cursor:pointer;transition:color .2s,border-color .2s,background .2s}
-.nr-switch sup{font-size:.62em;margin-left:1px}
-.nr-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.45;transition:opacity .2s}
-.nr-switch:hover{color:var(--ink);border-color:var(--ink)}
+/* Two names on one line, the lit one is where you are. The switch is set in
+   the logo's own face and size so the pair reads as one wordmark, not as a
+   control parked next to one. */
+.brand{display:flex;align-items:baseline;gap:11px}
+.brand-div{font-family:var(--serif);font-size:24px;color:var(--dim);user-select:none}
+.nr-switch{font-family:var(--serif);font-size:24px;letter-spacing:-.01em;
+  border:0;padding:0;background:none;cursor:pointer;color:var(--mute);transition:color .2s}
+.nr-switch sup{font-size:.46em;margin-left:1px}
+.nr-switch:hover,.nr-switch[aria-pressed="true"]{color:var(--ink)}
 .nr-switch:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
-.nr-switch[aria-pressed="true"]{background:oklch(0.47 0.26 264);border-color:transparent;color:#fff}
-.nr-switch[aria-pressed="true"] .nr-dot{opacity:1}
-nav.light .nr-switch{color:#77756d;border-color:rgba(15,15,15,.2)}
-nav.light .nr-switch:hover{color:#0f0f0f;border-color:#0f0f0f}
-nav.light .nr-switch[aria-pressed="true"]{color:#fff;border-color:transparent}
+body.nr .logo{color:var(--mute)}
+nav.light .brand-div{color:rgba(15,15,15,.3)}
+nav.light .nr-switch{color:#77756d}
+nav.light .nr-switch:hover,nav.light .nr-switch[aria-pressed="true"]{color:#0f0f0f}
+body.nr nav.light .logo{color:#77756d}
 
 #venture{display:none}
 /* In NeuroRoomie mode the rest of the site is not on screen, so neither are
@@ -414,4 +415,4 @@ body.nr #venture{display:block;margin-top:0;padding-top:calc(var(--navh,81px) + 
 .nr-tests .v-row{cursor:pointer;color:inherit}
 .nr-tests .v-row .x i{font-style:normal;display:inline-block;transition:transform .3s}
 .nr-tests .v-row:hover .x i{transform:translate(4px,-4px)}
-@media (max-width:640px){.nr-switch{font-size:11px;padding:6px 11px 6px 9px;gap:6px}.brand{gap:10px}}
+@media (max-width:640px){.logo,.brand-div,.nr-switch{font-size:19px}.brand{gap:8px}}
