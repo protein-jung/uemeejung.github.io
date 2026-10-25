@@ -70,16 +70,17 @@
   send({ type: 'pageview', ref: ref });
 
   /* ---------------- 클릭 ----------------
-     누른 것의 이름을 고른다. data-track 이 있으면 그것이 정답이고, 없으면
-     id, 그 다음 눈에 보이는 글자 순이다. 글자는 버튼이 바뀌면 같이 바뀌므로
-     오래 남길 이름이 필요한 자리에는 data-track 을 달아 둔다. */
+     누른 것의 이름을 고른다. data-track 이 있으면 그것이 정답이고, 없으면 눈에
+     보이는 글자다 — 통계를 읽는 사람에게 '#goSec' 보다 '가보자고 →' 가 쓸모 있다.
+     글자는 버튼 문구를 고치면 같이 바뀌므로, 이름을 오래 고정해야 하는 자리와
+     글자가 없는 자리(아이콘 버튼)에는 data-track 을 달아 둔다. */
   function label(el) {
     if (el.getAttribute('data-track')) return el.getAttribute('data-track');
-    if (el.id) return '#' + el.id;
     var t = (el.textContent || '').replace(/\s+/g, ' ').trim();
     if (t) return t.slice(0, 60);
     var aria = el.getAttribute('aria-label');
     if (aria) return aria;
+    if (el.id) return '#' + el.id;
     return el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).split(/\s+/)[0] : '');
   }
 
