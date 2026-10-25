@@ -299,6 +299,7 @@ const PAGE = `<!doctype html>
  nav h1{font-size:14px;margin:0 20px 16px;letter-spacing:-.02em}
  nav a{display:block;padding:9px 20px;color:var(--ink);text-decoration:none;cursor:pointer}
  nav a.on{background:var(--bg);font-weight:600;box-shadow:inset 3px 0 var(--accent)}
+ nav #out{color:#777;margin-top:20px}
  main{padding:28px 32px;overflow:auto}
  h2{margin:0 0 4px;font-size:20px} .sub{color:#777;margin:0 0 20px}
  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
@@ -329,6 +330,30 @@ const PAGE = `<!doctype html>
  .detail dl{display:grid;grid-template-columns:220px 1fr;gap:2px 16px;margin:12px 0 0;font-size:13px}
  .detail dt{color:#777;overflow-wrap:anywhere}
  .detail dd{margin:0;overflow-wrap:anywhere}
+ /* 폰: 200px 사이드바가 화면의 절반을 먹어 본문이 한 글자씩 접혔다.
+    메뉴를 가로 탭 줄로 눕히고 본문에 폭을 전부 넘긴다. */
+ @media (max-width:760px){
+   #shell{grid-template-columns:1fr}
+   nav{display:flex;align-items:center;gap:0;padding:0;overflow-x:auto;
+       border-right:0;border-bottom:1px solid var(--line);
+       position:sticky;top:0;z-index:5;-webkit-overflow-scrolling:touch}
+   nav h1{margin:0 2px 0 16px;flex:none}
+   nav a{flex:none;white-space:nowrap;padding:14px 12px}
+   nav a.on{background:transparent;box-shadow:inset 0 -3px var(--accent)}
+   nav #out{margin:0 16px 0 auto}
+   main{padding:18px 16px}
+   #login{margin:10vh 16px;max-width:none}
+   .cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+   .card{min-width:0;padding:12px 14px}
+   .card b{font-size:22px}
+   .grid2{grid-template-columns:1fr}
+   .panel{padding:14px 16px}
+   .range{flex-wrap:wrap}
+   .rank td.k{overflow-wrap:break-word}
+   .rank td.v{padding-left:10px;font-size:12px}
+   .detail dl{grid-template-columns:1fr;gap:0}
+   .detail dt{margin-top:12px}
+ }
 </style></head><body>
 <div id="login">
   <div style="font-weight:700">uemeejung 관리자</div>
@@ -353,7 +378,7 @@ const PAGE = `<!doctype html>
     <a data-v="responses">공간 궁합 테스트</a>
     <a data-v="contacts">인터뷰 연락처</a>
     <a data-v="dropoff">중간 이탈</a>
-    <a id="out" style="color:#777;margin-top:20px">로그아웃</a>
+    <a id="out">로그아웃</a>
   </nav>
   <main id="main"></main>
 </div>

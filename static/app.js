@@ -184,7 +184,10 @@
       t /= 1000;
       sm.x += (hm.x - sm.x) * .08; sm.y += (hm.y - sm.y) * .08;
       ctx.clearRect(0, 0, W, H);
-      var top = H * .1, bot = H * .62, gap = (bot - top) / (CH.length - 1), left = 90;
+      var top = H * .1, bot = H * .62, gap = (bot - top) / (CH.length - 1);
+      // 좁은 화면에서는 채널 이름이 히어로 글씨와 겹쳐 읽기만 어렵게 한다.
+      // 이름을 접고 파형을 가장자리까지 끌어 쓴다.
+      var narrow = W < 640, left = narrow ? 6 : 90;
       ctx.font = '10px Geist Mono, monospace';
       // time grid
       ctx.strokeStyle = 'rgba(236,235,231,.04)'; ctx.lineWidth = 1;
@@ -196,8 +199,10 @@
       CH.forEach(function (c, i) {
         var s = seeds[i], y0 = top + i * gap;
         var near = Math.max(0, 1 - Math.abs(sm.y - y0) / 140);
-        ctx.fillStyle = near > .3 ? ACC : 'rgba(141,143,142,.6)';
-        ctx.fillText(c, 48, y0 + 3);
+        if (!narrow) {
+          ctx.fillStyle = near > .3 ? ACC : 'rgba(141,143,142,.6)';
+          ctx.fillText(c, 48, y0 + 3);
+        }
         ctx.beginPath();
         for (var x = left; x <= W; x += 3) {
           var u = x * .01 - t * 1.6;
