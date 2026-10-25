@@ -3,6 +3,11 @@
 
 const SITE = "https://uemeejung.com";
 const KINDS = { responses: "responses", contacts: "contacts", dropoff: "dropoff" };
+const EVENT_TYPES = ["pageview", "click", "section", "exit"];
+
+/* 수집기가 보내는 값은 바깥에서 온 것이므로 길이를 잘라 넣는다. */
+const str = (v, max) => (v === undefined || v === null ? null : String(v).slice(0, max));
+const int = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.round(Number(v))) : null);
 const DAY = 86400;
 
 const enc = (s) => new TextEncoder().encode(s);
@@ -114,6 +119,45 @@ export default {
       return json({ error: "ADMIN_PW secret not set" }, { status: 503 });
     }
 
+    /* ---------- 방문 통계 수집 (공개) ----------
+       본문이 text/plain 으로 온다 (preflight 없이 sendBeacon 으로 보내려고).
+       req.json() 은 Content-Type 과 무관하게 파싱하므로 그대로 읽는다. */
+    if (p === "/api/track" && req.method === "POST") {
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return new Response("bad json", { status: 400, headers: cors(req) });
+      }
+      const evs = (Array.isArray(body?.events) ? body.events : [])
+        .slice(0, 50)
+        .filter((e) => e && EVENT_TYPES.includes(e.type) && e.vid && e.sid);
+      if (evs.length) {
+        const now = new Date().toISOString();
+        await env.DB.batch(
+          evs.map((e) =>
+            env.DB.prepare(
+              `INSERT INTO events (ts, vid, sid, type, path, label, href, ref, device, dwell, depth)
+               VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)`
+            ).bind(
+              now,
+              str(e.vid, 64),
+              str(e.sid, 64),
+              e.type,
+              str(e.path, 200),
+              str(e.label, 120),
+              str(e.href, 200),
+              str(e.ref, 120),
+              e.device === "mobile" ? "mobile" : "desktop",
+              int(e.dwell),
+              int(e.depth)
+            )
+          )
+        );
+      }
+      return new Response("ok", { headers: cors(req) });
+    }
+
     /* ---------- 수집 (공개) ---------- */
     const collect = p.match(/^\/api\/(responses|contacts|dropoff)$/);
     if (collect && req.method === "POST") {
@@ -164,6 +208,45 @@ export default {
           .filter((n) => n > 0);
         const avg = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
         return json({ responses: r, contacts: c, dropoff: d, avgDurationSec: avg });
+      }
+
+      /* 사이트 통계: 한 번 눌러 한 화면을 채우므로 집계도 한 번에 모아 보낸다.
+         각 질문이 SQL 한 줄이라 어디서 나온 숫자인지 읽으면 바로 보인다. */
+      if (kind === "site") {
+        const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get("days") || "7", 10)));
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const one = (sql) => env.DB.prepare(sql).bind(since).first();
+        const many = (sql) => env.DB.prepare(sql).bind(since).all().then((r) => r.results);
+
+        const [sum, bounce, stay, clicks, sections, refs, exits, devices, daily, paths] = await Promise.all([
+          one(`SELECT COUNT(DISTINCT sid) sessions, COUNT(DISTINCT vid) visitors,
+                      SUM(type = 'pageview') pageviews, SUM(type = 'click') clicks
+               FROM events WHERE ts >= ?1`),
+          one(`SELECT COUNT(*) n FROM (
+                 SELECT sid FROM events WHERE ts >= ?1 GROUP BY sid HAVING SUM(type = 'click') = 0)`),
+          one(`SELECT AVG(dwell) avgDwell, AVG(depth) avgDepth, COUNT(*) n
+               FROM events WHERE ts >= ?1 AND type = 'exit' AND dwell > 0`),
+          many(`SELECT label, COUNT(*) n, COUNT(DISTINCT sid) sessions
+                FROM events WHERE ts >= ?1 AND type = 'click'
+                GROUP BY label ORDER BY n DESC LIMIT 40`),
+          many(`SELECT label, COUNT(*) views, SUM(dwell) total, AVG(dwell) avg
+                FROM events WHERE ts >= ?1 AND type = 'section'
+                GROUP BY label ORDER BY total DESC`),
+          many(`SELECT CASE WHEN ref IS NULL OR ref = '' THEN '(직접 방문)' ELSE ref END src, COUNT(*) n
+                FROM events WHERE ts >= ?1 AND type = 'pageview'
+                GROUP BY src ORDER BY n DESC LIMIT 20`),
+          many(`SELECT CASE WHEN label IS NULL OR label = '' THEN '(기록 없음)' ELSE label END spot,
+                       COUNT(*) n, AVG(dwell) avg, AVG(depth) depth
+                FROM events WHERE ts >= ?1 AND type = 'exit'
+                GROUP BY spot ORDER BY n DESC`),
+          many(`SELECT device, COUNT(DISTINCT sid) n FROM events WHERE ts >= ?1 GROUP BY device`),
+          many(`SELECT substr(ts, 1, 10) d, COUNT(DISTINCT sid) sessions, SUM(type = 'click') clicks
+                FROM events WHERE ts >= ?1 GROUP BY d ORDER BY d`),
+          many(`SELECT path, COUNT(*) n FROM events WHERE ts >= ?1 AND type = 'pageview'
+                GROUP BY path ORDER BY n DESC LIMIT 10`),
+        ]);
+
+        return json({ days, sum, bounces: bounce.n, stay, clicks, sections, refs, exits, devices, daily, paths });
       }
 
       if (kind === "labels") return json(await labels());
@@ -231,6 +314,18 @@ const PAGE = `<!doctype html>
  tr.pick{cursor:pointer} tr.pick:hover td{background:#f3f6ff}
  th.lead,td.lead{background:#fbfaf8}
  .detail{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:14px}
+ .range{display:flex;gap:6px;margin-bottom:18px}
+ .range button{background:#fff;color:#777;border:1px solid var(--line);padding:6px 12px;font-size:12.5px}
+ .range button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:16px}
+ .panel h3{margin:0 0 2px;font-size:15px}
+ .panel .note{color:#777;font-size:12px;margin:0 0 12px}
+ .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+ .rank{width:100%;border-collapse:collapse;font-size:13px;white-space:normal}
+ .rank td{border:0;padding:5px 0;vertical-align:middle}
+ .rank td.k{width:100%;overflow-wrap:anywhere}
+ .rank td.v{text-align:right;white-space:nowrap;padding-left:14px;color:#555}
+ .meter{height:5px;border-radius:3px;background:var(--accent);opacity:.75;margin-top:3px;min-width:2px}
  .detail dl{display:grid;grid-template-columns:220px 1fr;gap:2px 16px;margin:12px 0 0;font-size:13px}
  .detail dt{color:#777;overflow-wrap:anywhere}
  .detail dd{margin:0;overflow-wrap:anywhere}
@@ -254,6 +349,7 @@ const PAGE = `<!doctype html>
   <nav>
     <h1>uemeejung</h1>
     <a data-v="stats">개요</a>
+    <a data-v="site">사이트 통계</a>
     <a data-v="responses">공간 궁합 테스트</a>
     <a data-v="contacts">인터뷰 연락처</a>
     <a data-v="dropoff">중간 이탈</a>
@@ -263,7 +359,7 @@ const PAGE = `<!doctype html>
 </div>
 <script>
 var M = document.getElementById("main");
-var TITLE = { stats:["개요","수집 현황"], responses:["공간 궁합 테스트","/neuroroomie/1/ 완료 응답"], contacts:["인터뷰 연락처","심층 인터뷰에 동의한 분"], dropoff:["중간 이탈","끝까지 가지 않은 기록"] };
+var TITLE = { stats:["개요","수집 현황"], site:["사이트 통계","uemeejung.com 방문자가 무엇을 보고 눌렀는지"], responses:["공간 궁합 테스트","/neuroroomie/1/ 완료 응답"], contacts:["인터뷰 연락처","심층 인터뷰에 동의한 분"], dropoff:["중간 이탈","끝까지 가지 않은 기록"] };
 
 function api(path){ return fetch("/api/admin/" + path, { credentials:"same-origin" }).then(function(r){
   if (r.status === 401) { show(false); throw new Error("auth"); }
@@ -319,10 +415,73 @@ function detail(i){
   M.scrollTop = 0;
 }
 
+function pct(a, b){ return b ? Math.round((a / b) * 100) : 0; }
+function mmss(ms){
+  var s = Math.round((ms || 0) / 1000);
+  return s >= 60 ? Math.floor(s / 60) + "분 " + (s % 60) + "초" : s + "초";
+}
+function rank(rows, key, val, text){
+  if (!rows.length) return '<p class="note">아직 기록이 없습니다.</p>';
+  var top = Math.max.apply(null, rows.map(function(r){ return Number(r[val]) || 0; })) || 1;
+  return '<table class="rank">' + rows.map(function(r){
+    var n = Number(r[val]) || 0;
+    return '<tr><td class="k">' + esc(r[key])
+      + '<div class="meter" style="width:' + Math.max(2, pct(n, top)) + '%"></div></td>'
+      + '<td class="v">' + esc(text ? text(r) : n) + "</td></tr>";
+  }).join("") + "</table>";
+}
+function panel(title, note, inner){
+  return '<div class="panel"><h3>' + esc(title) + "</h3>"
+    + (note ? '<p class="note">' + esc(note) + "</p>" : '<div style="height:12px"></div>') + inner + "</div>";
+}
+
+var DAYS = 7;
+function site(){
+  var t = TITLE.site;
+  var head = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + "</p>"
+    + '<div class="range">' + [[1,"오늘"],[7,"7일"],[30,"30일"],[365,"전체"]].map(function(o){
+        return '<button data-d="' + o[0] + '"' + (DAYS === o[0] ? ' class="on"' : "") + ">" + o[1] + "</button>";
+      }).join("") + "</div>";
+  M.innerHTML = head + "<p>불러오는 중…</p>";
+  function wire(){
+    M.querySelectorAll(".range button").forEach(function(b){
+      b.onclick = function(){ DAYS = +b.dataset.d; site(); };
+    });
+  }
+  wire();
+  api("site?days=" + DAYS).then(function(s){
+    var sum = s.sum || {}, stay = s.stay || {};
+    var sessions = sum.sessions || 0;
+    var cards = [
+      ["접속 (세션)", sessions],
+      ["순방문자", sum.visitors || 0],
+      ["페이지뷰", sum.pageviews || 0],
+      ["클릭", sum.clicks || 0],
+      ["이탈률", pct(s.bounces, sessions) + "%"],
+      ["평균 체류", mmss(stay.avgDwell)],
+      ["평균 스크롤", Math.round(stay.avgDepth || 0) + "%"]
+    ];
+    M.innerHTML = head + '<div class="cards">'
+      + cards.map(function(c){ return '<div class="card"><b>' + esc(c[1]) + "</b><span>" + c[0] + "</span></div>"; }).join("")
+      + "</div>"
+      + panel("무엇을 눌렀나", "버튼·링크별 클릭 수 (괄호는 누른 사람 수)", rank(s.clicks, "label", "n", function(r){ return r.n + " (" + r.sessions + "명)"; }))
+      + '<div class="grid2">'
+      + panel("어디를 오래 봤나", "구역이 화면에 머문 시간의 합계", rank(s.sections, "label", "total", function(r){ return mmss(r.total) + " · " + r.views + "회"; }))
+      + panel("어디서 떠났나", "마지막으로 보고 있던 구역", rank(s.exits, "spot", "n", function(r){ return r.n + "회 · " + mmss(r.avg); }))
+      + panel("어디서 왔나", "유입 출처 (호스트만 기록)", rank(s.refs, "src", "n"))
+      + panel("기기", "세션 수", rank(s.devices, "device", "n"))
+      + panel("주소별 접속", "", rank(s.paths, "path", "n"))
+      + panel("날짜별", "접속 / 클릭", rank(s.daily, "d", "sessions", function(r){ return r.sessions + "접속 · " + r.clicks + "클릭"; }))
+      + "</div>";
+    wire();
+  }).catch(function(){});
+}
+
 function view(v){
   document.querySelectorAll("nav a[data-v]").forEach(function(a){ a.className = a.dataset.v === v ? "on" : ""; });
   var t = TITLE[v];
   M.innerHTML = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + "</p><p>불러오는 중…</p>";
+  if (v === "site") { site(); return; }
   if (v === "stats") {
     api("stats").then(function(s){
       M.innerHTML = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + '</p><div class="cards">'

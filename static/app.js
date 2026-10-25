@@ -361,7 +361,8 @@
     function render(k) {
       box.innerHTML = AX.map(function (a, i) {
         var on = st[i] ? 2 : 0, off = st[i] ? 0 : 2;
-        return '<button class="lt' + (i === k ? ' flip' : '') + '" data-i="' + i + '" type="button" aria-pressed="' + (st[i] ? 'true' : 'false') + '">' +
+        return '<button class="lt' + (i === k ? ' flip' : '') + '" data-i="' + i + '" type="button"' +
+          ' data-track="Space-BTI \uCD95 ' + (i + 1) + '" aria-pressed="' + (st[i] ? 'true' : 'false') + '">' +
           '<b>' + a[on] + '</b><span class="lbl">' + a[on + 1] + ' <i>/ ' + a[off + 1] + '</i></span></button>';
       }).join('');
       Array.prototype.forEach.call(box.querySelectorAll('.lt'), function (b) {
