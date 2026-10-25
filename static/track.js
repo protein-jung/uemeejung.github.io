@@ -145,7 +145,9 @@
     Object.keys(seen).forEach(function (id) {
       if (seen[id] >= 1000) send({ type: 'section', label: id, dwell: seen[id] });
     });
-    send({ type: 'exit', label: lastSeen, dwell: Date.now() - t0, depth: depth });
+    // 설문처럼 구역이 없는 화면은 지금 보던 단계를 스스로 알려 준다.
+    var view = document.documentElement.getAttribute('data-view');
+    send({ type: 'exit', label: view || lastSeen, dwell: Date.now() - t0, depth: depth });
     flush(true);
   }
 

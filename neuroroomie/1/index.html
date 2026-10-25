@@ -497,6 +497,9 @@ function lfSelftest(){
     st.idx++; saveState(); return render();
   }
   setBar(); (V[n.t] || V.intro)(n); window.scrollTo(0, 0);
+  /* 지금 보고 있는 단계. 통계 수집기(track.js)가 "어디서 떠났나"에 이 값을 쓴다 —
+     이 화면은 구역(section)이 아니라 한 칸짜리 흐름이라 달리 가리킬 것이 없다. */
+  document.documentElement.setAttribute("data-view", n && n.t === "item" ? n.it.id : (n && n.t) || "intro");
 }
   function esc(s){ return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function btnNext(label, disabled, id){
@@ -969,5 +972,6 @@ function lfSelftest(){
 })();
 </script>
 
+<script src="/static/track.js" defer></script>
 </body>
 </html>
