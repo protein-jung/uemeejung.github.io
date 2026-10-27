@@ -86,10 +86,24 @@ async function config() {
   return CFG;
 }
 async function labels() {
+  const cfg = await config();
   const q = {};
-  (await config()).items.forEach((it) => {
+  cfg.items.forEach((it) => {
     if (it.id && it.text) q[it.id] = it.text;
   });
+  /* derive() 가 붙이는 계산 칸 — 번호만 보면 무슨 값인지 알 수 없다 */
+  cfg.axes.forEach((ax, i) => {
+    const n = i + 1, name = ax.mismatch || `${ax.front}↔${ax.back}`;
+    q["P" + n] = `내 성향 · ${name} (+${ax.front} / −${ax.back}, −3~+3)`;
+    q["S" + n] = `지금 집 · ${name} (−3~+3)`;
+    q["불일치" + n] = `차이 |P−S| · ${name}`;
+  });
+  q["일치도"] = "궁합 % = (1 − 평균 불일치 ÷ 6) × 100";
+  q["만족도"] = "D1·D2·D7·(8−D8) 평균 (1~7)";
+  q["최대불일치"] = "가장 안 맞는 축";
+  q["닉네임"] = "유형 별명";
+  q["궁합"] = "응답 당시 테스트 화면에 보여 준 궁합 % (정수)";
+  q["유형"] = "16유형 코드";
   return q;
 }
 
@@ -102,6 +116,45 @@ function toCsv(rows) {
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
   return "﻿" + [cols.join(","), ...rows.map((r) => cols.map((c) => cell(r[c])).join(","))].join("\n");
+}
+
+const num = (v) => (v === "" || v === null || v === undefined || isNaN(Number(v)) ? null : Number(v));
+const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+const r2 = (x) => (x === null || x === undefined ? null : Math.round(x * 100) / 100);
+
+/* 엑셀 '응답입력' 시트가 수식으로 채우던 칸을 한 응답에서 그대로 뽑는다 (지시서 4장).
+   계산식은 테스트 페이지의 lfScore 와 같다:
+     성향 P = 축 5문항 평균(역문항 8−x) − 4   (+ 는 앞 극, − 는 뒤 극)
+     공간 S = 그 축 지각 2문항 평균 − 4
+     불일치 = |P−S| · 일치도 = (1 − 평균 불일치 / 6) × 100 · 만족도 = D1,D2,D7,(8−D8) 평균
+   답이 빠진 축은 null 로 둔다 — 0 으로 채우면 평균이 거짓말을 한다. */
+function derive(cfg, r) {
+  const out = {};
+  const gaps = [];
+  cfg.axes.forEach((ax, i) => {
+    const n = i + 1;
+    const vals = ax.items.map((id) => {
+      const v = num(r[id]);
+      return v === null ? null : ax.rev.indexOf(id) >= 0 ? 8 - v : v;
+    });
+    const P = vals.indexOf(null) >= 0 ? null : r2(mean(vals) - 4);
+    const pv = ax.perc.map((id) => num(r[id]));
+    const S = pv.indexOf(null) >= 0 ? null : r2(mean(pv) - 4);
+    const gap = P === null || S === null ? null : r2(Math.abs(P - S));
+    out["P" + n] = P;
+    out["S" + n] = S;
+    out["불일치" + n] = gap;
+    gaps.push(gap);
+  });
+  out["일치도"] = gaps.indexOf(null) >= 0 ? null : r2((1 - mean(gaps) / 6) * 100);
+  const d = ["D1", "D2", "D7", "D8"].map((k) => num(r[k]));
+  out["만족도"] = d.indexOf(null) >= 0 ? null : r2((d[0] + d[1] + d[2] + (8 - d[3])) / 4);
+  /* 동점이면 앞 축 — lfScore 의 worstAxis 와 같게 */
+  const worst = gaps.reduce((bi, g, i) => (g !== null && (bi < 0 || g > gaps[bi]) ? i : bi), -1);
+  const wa = worst < 0 ? null : cfg.axes[worst];
+  out["최대불일치"] = wa ? wa.mismatch || `${wa.front}↔${wa.back}` : "";
+  out["닉네임"] = (cfg.types[r["유형"]] || {}).name || "";
+  return out;
 }
 
 async function rows(env, kind, test) {
@@ -255,15 +308,11 @@ export default {
         return json({ days, sum, bounces: bounce.n, stay, clicks, sections, refs, exits, devices, daily, paths });
       }
 
-      /* 테스트 결과 분석. 문항·축·유형 정의는 테스트 페이지의 lf-config 가 원본이고,
-         성향 P = 축 5문항 평균(역문항 8−x) − 4 · 공간 S = 지각 2문항 평균 − 4 · 불일치 |P−S|
-         는 그 페이지 lfScore 와 같은 식이다 (응답 수가 수백 단위라 JS 로 그냥 센다). */
+      /* 테스트 결과 분석. 한 응답의 계산 칸은 derive() 가 만들고, 여기서는 그걸 모아 센다
+         (응답 수가 수백 단위라 SQL 집계 없이 JS 로 그냥 센다). */
       if (kind === "results") {
         const cfg = await config();
-        const data = await rows(env, "responses", test || "1");
-        const num = (v) => (v === "" || v === null || v === undefined || isNaN(Number(v)) ? null : Number(v));
-        const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
-        const r2 = (x) => (x === null ? null : Math.round(x * 100) / 100);
+        const data = (await rows(env, "responses", test || "1")).map((r) => ({ ...r, ...derive(cfg, r) }));
         const col = (id) => data.map((r) => r[id]).filter((v) => v !== "" && v !== null && v !== undefined);
         const tally = (xs) => {
           const m = new Map();
@@ -271,41 +320,30 @@ export default {
           return [...m].map(([k, n]) => ({ k, n })).sort((a, b) => b.n - a.n);
         };
 
-        const axes = cfg.axes.map((ax) => {
+        const axes = cfg.axes.map((ax, i) => {
+          const n = i + 1;
           const Ps = [], Ss = [], gaps = [];
           let front = 0, back = 0;
           data.forEach((r) => {
-            const vals = ax.items.map((id) => {
-              const v = num(r[id]);
-              return v === null ? null : ax.rev.indexOf(id) >= 0 ? 8 - v : v;
-            });
-            const P = vals.indexOf(null) >= 0 ? null : mean(vals) - 4;
-            const pv = ax.perc.map((id) => num(r[id]));
-            const S = pv.indexOf(null) >= 0 ? null : mean(pv) - 4;
+            const P = r["P" + n], S = r["S" + n], g = r["불일치" + n];
             if (P !== null) {
               Ps.push(P);
               if (P > 0 || (P === 0 && r[ax.img] === "A")) front++; else back++;
             }
             if (S !== null) Ss.push(S);
-            if (P !== null && S !== null) gaps.push(Math.abs(P - S));
+            if (g !== null) gaps.push(g);
           });
           return { name: `${ax.front} ↔ ${ax.back}`, note: ax.mismatch || "",
                    gap: r2(mean(gaps)), P: r2(mean(Ps)), S: r2(mean(Ss)),
                    front, back, frontName: ax.front, backName: ax.back };
         });
 
-        /* 만족도 = D1,D2,D7,(8−D8) 평균 */
-        const sat = data
-          .map((r) => {
-            const v = ["D1", "D2", "D7", "D8"].map((k) => num(r[k]));
-            return v.indexOf(null) >= 0 ? null : (v[0] + v[1] + v[2] + (8 - v[3])) / 4;
-          })
-          .filter((v) => v !== null);
+        const sat = col("만족도");
 
         const DIST = ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "C12", "E1", "E3", "F3"];
         return json({
           n: data.length,
-          avgFit: r2(mean(col("궁합").map(Number))),
+          avgFit: r2(mean(col("일치도"))),
           avgSat: r2(mean(sat)),
           avgDur: Math.round(mean(col("duration_sec").map(Number)) || 0),
           types: tally(col("유형")).map((t) => ({ ...t, name: (cfg.types[t.k] || {}).name || "" })),
@@ -317,7 +355,7 @@ export default {
           })),
           comments: data
             .filter((r) => String(r.F2 || "").trim())
-            .map((r) => ({ type: r["유형"] || "", fit: r["궁합"], text: r.F2, agree: r.F1 })),
+            .map((r) => ({ type: r["유형"] || "", fit: r["일치도"], text: r.F2, agree: r.F1 })),
           daily: tally(data.map((r) => String(r.수집시각 || "").slice(0, 10))).sort((a, b) => (a.k < b.k ? -1 : 1)),
           utm: tally(data.map((r) => r.utm_source || "(직접 접속)")),
           device: tally(data.map((r) => (/Mobi|Android|iPhone|iPad/.test(r.user_agent || "") ? "모바일" : "데스크톱"))),
@@ -327,7 +365,12 @@ export default {
       if (kind === "labels") return json(await labels());
 
       if (KINDS[kind]) {
-        const data = await rows(env, kind, test);
+        let data = await rows(env, kind, test);
+        /* 엑셀 응답입력 시트처럼, 답 뒤에 수식 칸을 붙여서 내려 준다 (CSV 도 같이 따라간다) */
+        if (kind === "responses") {
+          const cfg = await config();
+          if (cfg.axes.length) data = data.map((r) => ({ ...r, ...derive(cfg, r) }));
+        }
         if (url.searchParams.get("format") === "csv") {
           return new Response(toCsv(data), {
             headers: {
@@ -471,7 +514,7 @@ function esc(s){ return String(s === undefined || s === null ? "" : s).replace(/
 
 /* 한 응답에 문항이 50개 넘어가서 전부 기둥으로 펼치면 읽힐 표가 아니다.
    알아볼 수 있는 칸 몇 개만 앞에 세우고, 나머지는 줄을 눌렀을 때 아래에 펼친다. */
-var LEAD = ["수집시각", "응답ID", "유형", "궁합", "duration_sec", "마지막문항"];
+var LEAD = ["수집시각", "응답ID", "유형", "닉네임", "궁합", "만족도", "최대불일치", "duration_sec", "마지막문항"];
 var HEAD = { duration_sec: "소요(초)" };
 var LBL = {};
 var LAST = [];
