@@ -69,22 +69,28 @@ async function store(env, kind, test, row) {
 /* 문항 번호(A1, B3 …)만 보여 주면 읽는 사람이 매번 질문지를 대조해야 한다.
    문안은 테스트 페이지가 이미 가지고 있으므로 거기서 읽어 온다 — 문안을 두 곳에 두면 언젠가 갈라진다.
    못 읽으면 번호로 그대로 보여 준다. */
-let QMAP = null;
-async function labels() {
-  if (QMAP) return QMAP;
-  QMAP = {};
+let CFG = null;
+async function config() {
+  if (CFG) return CFG;
   try {
     const res = await fetch(`${SITE}/neuroroomie/1/`, { cf: { cacheTtl: 3600, cacheEverything: true } });
     const html = await res.text();
     const m = html.match(/<script type="application\/json" id="lf-config">([\s\S]*?)<\/script>/);
-    const cfg = JSON.parse(m[1]);
-    (cfg.items || []).forEach((it) => {
-      if (it.id && it.text) QMAP[it.id] = it.text;
-    });
+    CFG = JSON.parse(m[1]);
   } catch {
-    /* 빈 채로 둔다 */
+    CFG = {}; /* 빈 채로 둔다 */
   }
-  return QMAP;
+  CFG.items = CFG.items || [];
+  CFG.axes = CFG.axes || [];
+  CFG.types = CFG.types || {};
+  return CFG;
+}
+async function labels() {
+  const q = {};
+  (await config()).items.forEach((it) => {
+    if (it.id && it.text) q[it.id] = it.text;
+  });
+  return q;
 }
 
 function toCsv(rows) {
@@ -249,6 +255,75 @@ export default {
         return json({ days, sum, bounces: bounce.n, stay, clicks, sections, refs, exits, devices, daily, paths });
       }
 
+      /* 테스트 결과 분석. 문항·축·유형 정의는 테스트 페이지의 lf-config 가 원본이고,
+         성향 P = 축 5문항 평균(역문항 8−x) − 4 · 공간 S = 지각 2문항 평균 − 4 · 불일치 |P−S|
+         는 그 페이지 lfScore 와 같은 식이다 (응답 수가 수백 단위라 JS 로 그냥 센다). */
+      if (kind === "results") {
+        const cfg = await config();
+        const data = await rows(env, "responses", test || "1");
+        const num = (v) => (v === "" || v === null || v === undefined || isNaN(Number(v)) ? null : Number(v));
+        const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+        const r2 = (x) => (x === null ? null : Math.round(x * 100) / 100);
+        const col = (id) => data.map((r) => r[id]).filter((v) => v !== "" && v !== null && v !== undefined);
+        const tally = (xs) => {
+          const m = new Map();
+          xs.forEach((v) => m.set(v, (m.get(v) || 0) + 1));
+          return [...m].map(([k, n]) => ({ k, n })).sort((a, b) => b.n - a.n);
+        };
+
+        const axes = cfg.axes.map((ax) => {
+          const Ps = [], Ss = [], gaps = [];
+          let front = 0, back = 0;
+          data.forEach((r) => {
+            const vals = ax.items.map((id) => {
+              const v = num(r[id]);
+              return v === null ? null : ax.rev.indexOf(id) >= 0 ? 8 - v : v;
+            });
+            const P = vals.indexOf(null) >= 0 ? null : mean(vals) - 4;
+            const pv = ax.perc.map((id) => num(r[id]));
+            const S = pv.indexOf(null) >= 0 ? null : mean(pv) - 4;
+            if (P !== null) {
+              Ps.push(P);
+              if (P > 0 || (P === 0 && r[ax.img] === "A")) front++; else back++;
+            }
+            if (S !== null) Ss.push(S);
+            if (P !== null && S !== null) gaps.push(Math.abs(P - S));
+          });
+          return { name: `${ax.front} ↔ ${ax.back}`, note: ax.mismatch || "",
+                   gap: r2(mean(gaps)), P: r2(mean(Ps)), S: r2(mean(Ss)),
+                   front, back, frontName: ax.front, backName: ax.back };
+        });
+
+        /* 만족도 = D1,D2,D7,(8−D8) 평균 */
+        const sat = data
+          .map((r) => {
+            const v = ["D1", "D2", "D7", "D8"].map((k) => num(r[k]));
+            return v.indexOf(null) >= 0 ? null : (v[0] + v[1] + v[2] + (8 - v[3])) / 4;
+          })
+          .filter((v) => v !== null);
+
+        const DIST = ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "C12", "E1", "E3", "F3"];
+        return json({
+          n: data.length,
+          avgFit: r2(mean(col("궁합").map(Number))),
+          avgSat: r2(mean(sat)),
+          avgDur: Math.round(mean(col("duration_sec").map(Number)) || 0),
+          types: tally(col("유형")).map((t) => ({ ...t, name: (cfg.types[t.k] || {}).name || "" })),
+          axes,
+          dists: DIST.map((id) => ({
+            id,
+            text: (cfg.items.filter((it) => it.id === id)[0] || {}).text || id,
+            rows: tally(col(id)),
+          })),
+          comments: data
+            .filter((r) => String(r.F2 || "").trim())
+            .map((r) => ({ type: r["유형"] || "", fit: r["궁합"], text: r.F2, agree: r.F1 })),
+          daily: tally(data.map((r) => String(r.수집시각 || "").slice(0, 10))).sort((a, b) => (a.k < b.k ? -1 : 1)),
+          utm: tally(data.map((r) => r.utm_source || "(직접 접속)")),
+          device: tally(data.map((r) => (/Mobi|Android|iPhone|iPad/.test(r.user_agent || "") ? "모바일" : "데스크톱"))),
+        });
+      }
+
       if (kind === "labels") return json(await labels());
 
       if (KINDS[kind]) {
@@ -375,7 +450,8 @@ const PAGE = `<!doctype html>
     <h1>uemeejung</h1>
     <a data-v="stats">개요</a>
     <a data-v="site">사이트 통계</a>
-    <a data-v="responses">공간 궁합 테스트</a>
+    <a data-v="results">테스트 결과 분석</a>
+    <a data-v="responses">응답 원본</a>
     <a data-v="contacts">인터뷰 연락처</a>
     <a data-v="dropoff">중간 이탈</a>
     <a id="out">로그아웃</a>
@@ -384,7 +460,7 @@ const PAGE = `<!doctype html>
 </div>
 <script>
 var M = document.getElementById("main");
-var TITLE = { stats:["개요","수집 현황"], site:["사이트 통계","uemeejung.com 방문자가 무엇을 보고 눌렀는지"], responses:["공간 궁합 테스트","/neuroroomie/1/ 완료 응답"], contacts:["인터뷰 연락처","심층 인터뷰에 동의한 분"], dropoff:["중간 이탈","끝까지 가지 않은 기록"] };
+var TITLE = { stats:["개요","수집 현황"], site:["사이트 통계","uemeejung.com 방문자가 무엇을 보고 눌렀는지"], results:["테스트 결과 분석","공간 궁합 테스트 — 유형·궁합·축별 불일치"], responses:["응답 원본","/neuroroomie/1/ 완료 응답 전체"], contacts:["인터뷰 연락처","심층 인터뷰에 동의한 분"], dropoff:["중간 이탈","끝까지 가지 않은 기록"] };
 
 function api(path){ return fetch("/api/admin/" + path, { credentials:"same-origin" }).then(function(r){
   if (r.status === 401) { show(false); throw new Error("auth"); }
@@ -502,11 +578,65 @@ function site(){
   }).catch(function(){});
 }
 
+function one(d){ return '<p class="note">' + esc(d) + "</p>"; }
+
+/* 결과 분석 — 사이트 통계와 같은 카드 + 패널 짜임새를 쓴다 */
+function results(){
+  var t = TITLE.results;
+  var head = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + "</p>";
+  M.innerHTML = head + "<p>불러오는 중…</p>";
+  api("results").then(function(s){
+    var f3 = (s.dists.filter(function(d){ return d.id === "F3"; })[0] || { rows:[] }).rows;
+    var yes = (f3.filter(function(r){ return r.k === "예"; })[0] || {}).n || 0;
+    var top = s.types[0] || {};
+    var cards = [
+      ["완료 응답", s.n + "건"],
+      ["평균 궁합", s.avgFit === null ? "-" : Math.round(s.avgFit) + "%"],
+      ["평균 만족도", s.avgSat === null ? "-" : s.avgSat + " / 7"],
+      ["최다 유형", (top.k || "-") + (top.n ? " · " + top.n + "명" : "")],
+      ["평균 소요", Math.floor(s.avgDur / 60) + "분 " + (s.avgDur % 60) + "초"],
+      ["인터뷰 희망", yes + "명"]
+    ];
+    var poles = [];
+    s.axes.forEach(function(a){
+      poles.push({ k:a.frontName, n:a.front }, { k:a.backName, n:a.back });
+    });
+    var comments = s.comments.length
+      ? '<table class="rank">' + s.comments.map(function(c){
+          return '<tr><td class="k">' + esc(c.text) + '</td><td class="v">'
+            + esc(c.type) + (c.fit === "" || c.fit === null ? "" : " · 궁합 " + c.fit + "%") + "</td></tr>";
+        }).join("") + "</table>"
+      : one("아직 적힌 코멘트가 없습니다.");
+
+    M.innerHTML = head + '<div class="cards">'
+      + cards.map(function(c){ return '<div class="card"><b>' + esc(c[1]) + "</b><span>" + c[0] + "</span></div>"; }).join("")
+      + "</div>"
+      + panel("16유형 분포", "응답자가 어떤 공간 유형으로 나왔나",
+          rank(s.types.map(function(r){ return { k: r.k + (r.name ? " " + r.name : ""), n: r.n }; }), "k", "n",
+               function(r){ return r.n + "명 · " + pct(r.n, s.n) + "%"; }))
+      + '<div class="grid2">'
+      + panel("어느 축이 지금 집과 안 맞나", "성향(P)과 지금 집(S)의 평균 차이 — 클수록 안 맞는다",
+          rank(s.axes, "name", "gap", function(r){
+            return (r.gap === null ? "-" : r.gap) + " (성향 " + r.P + " / 집 " + r.S + ")"; }))
+      + panel("성향 쏠림", "축마다 어느 쪽으로 기울었나 (명)", rank(poles, "k", "n"))
+      + panel("결과 코멘트", "F2 · 공감되거나 안 맞았던 부분", comments)
+      + s.dists.map(function(d){
+          return panel(d.id + ". " + d.text, "", d.rows.length ? rank(d.rows, "k", "n", function(r){
+            return r.n + "명 · " + pct(r.n, s.n) + "%"; }) : one("응답 없음"));
+        }).join("")
+      + panel("날짜별 응답", "", rank(s.daily, "k", "n", function(r){ return r.n + "건"; }))
+      + panel("유입", "utm_source", rank(s.utm, "k", "n"))
+      + panel("기기", "user_agent 기준", rank(s.device, "k", "n"))
+      + "</div>";
+  }).catch(function(){});
+}
+
 function view(v){
   document.querySelectorAll("nav a[data-v]").forEach(function(a){ a.className = a.dataset.v === v ? "on" : ""; });
   var t = TITLE[v];
   M.innerHTML = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + "</p><p>불러오는 중…</p>";
   if (v === "site") { site(); return; }
+  if (v === "results") { results(); return; }
   if (v === "stats") {
     api("stats").then(function(s){
       M.innerHTML = "<h2>" + t[0] + '</h2><p class="sub">' + t[1] + '</p><div class="cards">'
