@@ -486,6 +486,35 @@ function lfSelftest(){
   }
   window.addEventListener("pagehide", finishDropoff);
 
+  /* 결과가 나온 순간 한 번 보내고, 피드백(F1~F3)까지 마치면 같은 응답ID 로 다시 보낸다.
+     서버가 응답ID 로 덮어쓰므로 두 번 보내도 한 행이다. 결과만 보고 창을 닫아도 응답은 남는다. */
+  function commit(){
+    var now = new Date();
+    var row = { "응답ID": st.rid };
+    CONFIG.items.forEach(function(it){ if (it.id === "A8") return; row[it.id] = st.answers[it.id] !== undefined ? st.answers[it.id] : ""; });
+    CONFIG.metaCols.forEach(function(m){
+      if (m === "started_at") row[m] = st.startedAt;
+      else if (m === "completed_at") row[m] = now.toISOString();
+      else if (m === "duration_sec") row[m] = Math.round((now - new Date(st.startedAt)) / 1000);
+      else if (m === "utm_source") row[m] = st.utm || "";
+      else if (m === "b_order") row[m] = st.flow.filter(function(n){ return n.t === "item" && n.it.sec === "B"; }).map(function(n){ return n.it.id; }).join("|") + "|" + ["I1","I2","I3","I4"].join("|");
+      else if (m === "user_agent") row[m] = navigator.userAgent;
+      else if (m === "is_repeat") row[m] = st.isRepeat;
+    });
+    row["A8"] = st.answers["A8"] !== undefined ? st.answers["A8"] : "";
+    st.result = st.result || lfScore(st.answers);
+    row["유형"] = st.result.type;
+    row["궁합"] = st.result.fit === null ? "" : Math.round(st.result.fit);
+    /* 미전송 큐에는 한 응답당 한 벌만 둔다 (두 번째 전송이 첫 벌을 대체한다) */
+    LS.set(K.res, LS.get(K.res, []).filter(function(x){ return x["응답ID"] !== row["응답ID"]; }).concat([row]));
+    st.committed = true;
+    if (API("/api/responses")) apiPost("/api/responses", row, false, function(){
+      var bn = document.getElementById("sendFail"); if (bn) bn.style.display = "block";
+    }, function(){
+      LS.set(K.res, LS.get(K.res, []).filter(function(x){ return x["응답ID"] !== row["응답ID"]; }));
+    });
+  }
+
   /* ---------- 렌더 ---------- */
   function h(html){ app.innerHTML = html; }
   function setBar(){ bar.style.width = progress() + "%"; }
@@ -721,6 +750,8 @@ function lfSelftest(){
     document.getElementById("saveCard").onclick = function(){ downloadCard("card"); };
     document.getElementById("saveStory").onclick = function(){ downloadCard("story"); };
     document.getElementById("copyLink").onclick = copyLink;
+    if (!st.committed) commit(); /* 결과를 본 시점에 이미 다 답했다 — 여기서 저장한다 */
+    saveState();
   };
   function copyLink(){
     var base = location.origin === "null" || location.protocol === "file:" ? "(배포 후 테스트 링크)" : location.origin + location.pathname + "?utm_source=share";
@@ -754,30 +785,9 @@ function lfSelftest(){
     wireBack(function(){ if (st.idx > 1) { st.idx--; saveState(); render(); } });
   };
   V.done = function(){
-    if (!st.committed) {
-      var now = new Date();
-      var row = { "응답ID": st.rid };
-      CONFIG.items.forEach(function(it){ if (it.id === "A8") return; row[it.id] = st.answers[it.id] !== undefined ? st.answers[it.id] : ""; });
-      CONFIG.metaCols.forEach(function(m){
-        if (m === "started_at") row[m] = st.startedAt;
-        else if (m === "completed_at") row[m] = now.toISOString();
-        else if (m === "duration_sec") row[m] = Math.round((now - new Date(st.startedAt)) / 1000);
-        else if (m === "utm_source") row[m] = st.utm || "";
-        else if (m === "b_order") row[m] = st.flow.filter(function(n){ return n.t === "item" && n.it.sec === "B"; }).map(function(n){ return n.it.id; }).join("|") + "|" + ["I1","I2","I3","I4"].join("|");
-        else if (m === "user_agent") row[m] = navigator.userAgent;
-        else if (m === "is_repeat") row[m] = st.isRepeat;
-      });
-      row["A8"] = st.answers["A8"] !== undefined ? st.answers["A8"] : "";
-      st.result = st.result || lfScore(st.answers);
-      row["유형"] = st.result.type;
-      row["궁합"] = st.result.fit === null ? "" : Math.round(st.result.fit);
-      var res = LS.get(K.res, []); res.push(row); LS.set(K.res, res);
-      if (API("/api/responses")) apiPost("/api/responses", row, false, function(){
-        var bn = document.getElementById("sendFail"); if (bn) bn.style.display = "block";
-      }, function(){
-        LS.set(K.res, LS.get(K.res, []).filter(function(x){ return x["응답ID"] !== row["응답ID"]; }));
-      });
-      st.committed = true;
+    if (!st.finalSaved) {
+      commit(); /* 결과 화면에서 보낸 행에 F1~F3 답을 채워 덮어쓴다 */
+      st.finalSaved = true;
       LS.set(K.done, st.rid); LS.del(K.state);
     }
     var r = st.result || lfScore(st.answers), code = r.type, P = pal(code);

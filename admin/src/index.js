@@ -494,7 +494,7 @@ const PAGE = `<!doctype html>
     <a data-v="stats">개요</a>
     <a data-v="site">사이트 통계</a>
     <a data-v="results">테스트 결과 분석</a>
-    <a data-v="responses">응답 원본</a>
+    <a data-v="responses">공간 궁합 테스트</a>
     <a data-v="contacts">인터뷰 연락처</a>
     <a data-v="dropoff">중간 이탈</a>
     <a id="out">로그아웃</a>
@@ -503,7 +503,7 @@ const PAGE = `<!doctype html>
 </div>
 <script>
 var M = document.getElementById("main");
-var TITLE = { stats:["개요","수집 현황"], site:["사이트 통계","uemeejung.com 방문자가 무엇을 보고 눌렀는지"], results:["테스트 결과 분석","공간 궁합 테스트 — 유형·궁합·축별 불일치"], responses:["응답 원본","/neuroroomie/1/ 완료 응답 전체"], contacts:["인터뷰 연락처","심층 인터뷰에 동의한 분"], dropoff:["중간 이탈","끝까지 가지 않은 기록"] };
+var TITLE = { stats:["개요","수집 현황"], site:["사이트 통계","uemeejung.com 방문자가 무엇을 보고 눌렀는지"], results:["테스트 결과 분석","공간 궁합 테스트 — 유형·궁합·축별 불일치"], responses:["공간 궁합 테스트","/neuroroomie/1/ 완료 응답"], contacts:["인터뷰 연락처","심층 인터뷰에 동의한 분"], dropoff:["중간 이탈","끝까지 가지 않은 기록"] };
 
 function api(path){ return fetch("/api/admin/" + path, { credentials:"same-origin" }).then(function(r){
   if (r.status === 401) { show(false); throw new Error("auth"); }
